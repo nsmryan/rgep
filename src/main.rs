@@ -13,11 +13,11 @@ use statrs::distribution::{Uniform, Continuous};
 struct Ind(Vec<u8>);
 
 impl Ind {
-    fn show(&self, params: &Params<i32>) -> String {
+    fn show(&self, context: &Context<i32>) -> String {
         let mut string = "".to_string();
 
         for code in self.0.iter() {
-            let sym = params.decode(*code);
+            let sym = context.decode(*code);
             string.push_str(&sym.name);
             string.push_str(&"");
         }
@@ -25,28 +25,28 @@ impl Ind {
         string
     }
     
-    fn eval(&self, params: &Params<i32>) -> i32 {
-        self.eval_with_stack(params, &Vec::new())
+    fn eval(&self, context: &Context<i32>) -> i32 {
+        self.eval_with_stack(context, &Vec::new())
     }
 
-    fn eval_with_stack(&self, params: &Params<i32>, stack: &Vec<i32>) -> i32 {
+    fn eval_with_stack(&self, context: &Context<i32>, stack: &Vec<i32>) -> i32 {
         let mut local_stack = stack.clone();
-        self.execute_with_stack(params, &mut local_stack);
+        self.execute_with_stack(context, &mut local_stack);
         match local_stack.pop() {
             Some(result) => result,
             None => params.default,
         }
     }
 
-    fn execute(&self, params: &Params<i32>) -> Vec<i32> {
+    fn execute(&self, context: &Context<i32>) -> Vec<i32> {
         let mut stack = Vec::new();
-        self.execute_with_stack(params, &mut stack);
+        self.execute_with_stack(context, &mut stack);
         stack
     }
 
-    fn execute_with_stack(&self, params: &Params<i32>, stack: &mut Vec<i32>) {
+    fn execute_with_stack(&self, context: &Context<i32>, stack: &mut Vec<i32>) {
         for code in self.0.iter() {
-            let sym = params.decode(*code);
+            let sym = context.decode(*code);
             if stack.len() >= sym.arity.num_in {
                 (sym.fun)(stack);
             }
@@ -58,13 +58,13 @@ impl Ind {
 struct Pop(Vec<Ind>);
 
 impl Pop {
-    fn create<A, R>(params: &Params<A>, rng: &mut R) -> Pop 
+    fn create<A, R>(params: &Params<A>, context: &Context, rng: &mut R) -> Pop 
     where R: Rng, A: Clone {
         let mut pop = Vec::with_capacity(params.pop_size);
 
         let mut rng = rand::thread_rng();
 
-        let bits_needed = params.bits_per_sym();
+        let bits_needed = context.bits_per_sym();
         assert!(bits_needed <= 8, "This implementation does not currently support multiple byte symbols");
         let bytes_per_sym = ((bits_needed as f64) / 8.0).ceil() as usize;
 
@@ -103,36 +103,15 @@ struct Sym<'a, A: Clone + 'a> {
     fun: &'a Fn(&mut Vec<A>),
 }
 
-// NOTE this may be split into params and execution configuration
 #[derive(Clone)]
-struct Params<'a, A: Clone + 'a> {
+struct Params {
     prob_mut: f64,
     prob_one_point_crossover: f64,
     prob_two_point_crossover: f64,
     prob_rotation: f64,
 
-    terminals: Vec<Sym<'a, A>>,
-    functions: Vec<Sym<'a, A>>,
-
-    default: A,
-
     pop_size: usize,
     ind_size: usize,
-}
-
-impl<'a, A: Clone> Params<'a, A> {
-    pub fn num_symbols(&self) -> usize {
-        self.terminals.len() + self.functions.len()
-    }
-
-    pub fn bits_per_sym(&self) -> usize {
-        let syms_to_encode = max(self.terminals.len(), self.functions.len());
-        ((syms_to_encode as f64).log2().ceil()) as usize + 1
-    }
-
-    pub fn bytes_per_sym(&self) -> usize {
-        ((self.bits_per_sym() as f64) / 8.0).ceil() as usize
-    }
 }
 
 impl<'a> Params<'a, i32> {
@@ -144,6 +123,28 @@ impl<'a> Params<'a, i32> {
         } else {
             self.terminals[index % self.terminals.len()].clone()
         }
+    }
+}
+
+struct Context<'a, A: Clone + 'a> {
+    terminals: Vec<Sym<'a, A>>,
+    functions: Vec<Sym<'a, A>>,
+
+    default: A,
+}
+
+impl<'a, A: Clone> Context<'a, A> {
+    pub fn num_symbols(&self) -> usize {
+        self.terminals.len() + self.functions.len()
+    }
+
+    pub fn bits_per_sym(&self) -> usize {
+        let syms_to_encode = max(self.terminals.len(), self.functions.len());
+        ((syms_to_encode as f64).log2().ceil()) as usize + 1
+    }
+
+    pub fn bytes_per_sym(&self) -> usize {
+        ((self.bits_per_sym() as f64) / 8.0).ceil() as usize
     }
 }
 
@@ -176,19 +177,10 @@ fn test_eval_simple_equation() {
     let plus_sym = Sym { name: "+".to_string(), arity: Arity::new(2, 1), fun: &plus };
     let functions = vec!(plus_sym);
 
-    let params: Params<i32> = Params {
-        prob_mut: 0.001,
-        prob_one_point_crossover: 0.6,
-        prob_two_point_crossover: 0.6,
-        prob_rotation: 0.01,
-
+    let context: Context<i32> = Context {
         terminals: terminals,
         functions: functions,
-
         default: 0,
-
-        pop_size: 5,
-        ind_size: 4,
     };
 
     let mut ind_vec = Vec::new();
@@ -196,7 +188,7 @@ fn test_eval_simple_equation() {
     ind_vec.push(4); // two
     ind_vec.push(1); // plus
     let ind = Ind(ind_vec);
-    let result = ind.eval(&params);
+    let result = ind.eval(&context);
     assert!(result == 3, format!("result was {}", result))
 }
 
@@ -214,24 +206,24 @@ fn main() {
         prob_one_point_crossover: 0.6,
         prob_two_point_crossover: 0.6,
         prob_rotation: 0.01,
-
-        terminals: terminals,
-        functions: functions,
-
-        default: 0,
-
         pop_size: 5,
         ind_size: 4,
     };
 
-    println!("bits = {}", params.bits_per_sym());
-    println!("bytes = {}", params.bytes_per_sym());
+    let context = Context {
+        terminals: terminals,
+        functions: functions,
+        default: 0,
+    };
+
+    println!("bits = {}", context.bits_per_sym());
+    println!("bytes = {}", context.bytes_per_sym());
     
     let mut rng = thread_rng();
-    let mut pop = Pop::create(&params, &mut rng);
+    let mut pop = Pop::create(&params, &context, &mut rng);
     println!("{:?}", pop);
 
     for ind in pop.0 {
-        println!("{}", ind.show(&params));
+        println!("{}", ind.show(&context));
     }
 }

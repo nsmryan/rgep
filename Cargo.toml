@@ -1,0 +1,8 @@
+[package]
+name = "rgep"
+version = "0.1.0"
+authors = ["Noah Ryan <noah.m.ryan@nasa.gov>"]
+
+[dependencies]
+statrs = "0.10"
+rand = "0.6"

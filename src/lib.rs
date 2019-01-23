@@ -63,7 +63,7 @@ impl Ind {
         }
     }
 
-    pub fn compile<'a, A: Clone, B: Clone>(&self, context: &'a Context<A, B>) -> Program<'a, A, B> {
+    pub fn compile<A: Clone, B: Clone>(&self, context: &Context<A, B>) -> Program<A, B> {
         let mut program = Program(Vec::with_capacity(self.0.len()));
 
         self.compile_to(context, &mut program);
@@ -72,12 +72,12 @@ impl Ind {
     }
 
     pub fn compile_to<'a, A: Clone, B: Clone>(&self,
-                                              context: &'a Context<A, B>,
-                                              prog: &mut Program<'a, A, B>) {
+                                              context: &Context<A, B>,
+                                              prog: &mut Program<A, B>) {
         prog.0.clear();
         for code in self.0.iter() {
             let sym = context.decode(*code);
-            prog.0.push(sym);
+            prog.0.push(sym.clone());
         }
     }
 }
@@ -104,9 +104,9 @@ fn test_eval_simple_equation() {
     assert!(result.approx_eq(&3.0, 2.0 * ::std::f64::EPSILON, 2), format!("result was {}", result))
 }
 
-pub struct Program<'a, A: 'a, B: 'a>(pub Vec<&'a Sym<A, B>>);
+pub struct Program<A, B>(pub Vec<Sym<A, B>>);
 
-impl<'a, A, B> Program<'a, A, B> {
+impl<A, B> Program<A, B> {
     pub fn eval(&self, state: &mut B, default: A) -> A {
         let mut stack = Vec::new();
         self.eval_with_stack(state, default, &mut stack)
@@ -248,6 +248,31 @@ impl<A, B> Sym<A, B> {
 enum Node<A, B> {
     Node(Sym<A, B>, Vec<Node<A, B>>),
     Leaf(Sym<A, B>)
+}
+
+impl<A: Clone, B: Clone> Node<A, B> {
+    pub fn linearize(&self) -> Vec<Sym<A, B>> {
+        let mut syms = Vec::new();
+
+        self.linearize_helper(&mut syms);
+
+        syms
+    }
+
+    pub fn linearize_helper(&self, syms: &mut Vec<Sym<A, B>>) {
+        match self {
+            Node::Leaf(sym) => {
+                syms.push(sym.clone());
+            },
+
+            Node::Node(sym, children) => {
+                for node in children.iter().rev() {
+                    syms.push(sym.clone());
+                }
+                syms.push(sym.clone());
+            },
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -424,8 +449,9 @@ pub fn symbol_sym(sym: String) -> Sym<f64, HashMap<String, f64>> {
     Sym { name: sym, arity: Arity::new(0, 1), fun: f }
 }
 
-pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>, num_in: usize) {
+pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>) {
     let name = sym.name.clone();
+    let num_in = sym.arity.num_in;
     let f: Rc<Fn(&mut Vec<Node<A, B>>, &mut B)> =
         Rc::new(move |stack: &mut Vec<Node<A, B>>, _state: &mut B| {
             let mut children = Vec::new();

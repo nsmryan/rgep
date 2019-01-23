@@ -6,7 +6,6 @@ extern crate statrs;
 use std::cmp::max;
 use std::ops::Add;
 use std::iter::Sum;
-use std::boxed::Box;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -106,9 +105,9 @@ fn test_eval_simple_equation() {
     assert!(result.approx_eq(&3.0, 2.0 * ::std::f64::EPSILON, 2), format!("result was {}", result))
 }
 
-pub struct Program<'a, A: 'static, B: 'static>(pub Vec<&'a Sym<A, B>>);
+pub struct Program<'a, A: 'a, B: 'a>(pub Vec<&'a Sym<A, B>>);
 
-impl<'a, A: 'static, B: 'static> Program<'a, A, B> {
+impl<'a, A, B> Program<'a, A, B> {
     pub fn eval(&self, state: &mut B, default: A) -> A {
         let mut stack = Vec::new();
         self.eval_with_stack(state, default, &mut stack)
@@ -223,13 +222,13 @@ fn test_arity_simple_cases() {
 }
 
 #[derive(Clone)]
-pub struct Sym<A: 'static, B: 'static> {
+pub struct Sym<A, B> {
     pub name: String,
     pub arity: Arity,
     pub fun: Rc<Fn(&mut Vec<A>, &mut B)>,
 }
 
-impl<A: 'static, B: 'static> Sym<A, B> {
+impl<A, B> Sym<A, B> {
     pub fn new(name: String, arity: Arity, fun: Rc<Fn(&mut Vec<A>, &mut B)>) -> Sym<A, B> {
         Sym { name: name,
               arity: arity,
@@ -239,7 +238,7 @@ impl<A: 'static, B: 'static> Sym<A, B> {
 }
 
 #[derive(Clone)]
-enum Node<A: 'static, B: 'static> {
+enum Node<A, B> {
     Node(Sym<A, B>, Vec<Node<A, B>>),
     Leaf(Sym<A, B>)
 }
@@ -305,48 +304,48 @@ impl<A: Clone, B: Clone + 'static> Context<A, B> {
     }
 }
 
-pub fn zero<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn zero<B>(stack: &mut Vec<f64>, _b: &mut B) {
     stack.push(0.0);
 }
 
-pub fn one<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn one<B>(stack: &mut Vec<f64>, _b: &mut B) {
     stack.push(1.0);
 }
 
-pub fn two<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn two<B>(stack: &mut Vec<f64>, _b: &mut B) {
     stack.push(2.0);
 }
 
-pub fn plus<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn plus<B>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
     stack.push(arg1 + arg2);
 }
 
-pub fn mult<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn mult<B>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
     stack.push(arg1 * arg2);
 }
 
-pub fn dup<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn dup<B>(stack: &mut Vec<f64>, _b: &mut B) {
     let head = stack.pop().unwrap();
     stack.push(head);
     stack.push(head);
 }
 
-pub fn swap<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn swap<B>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
     stack.push(arg1);
     stack.push(arg2);
 }
 
-pub fn drop<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn drop<B>(stack: &mut Vec<f64>, _b: &mut B) {
     stack.pop().unwrap();
 }
 
-pub fn rot<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn rot<B>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
     let arg3 = stack.pop().unwrap();
@@ -355,13 +354,13 @@ pub fn rot<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
     stack.push(arg2);
 }
 
-pub fn nip<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn nip<B>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
     stack.push(arg1);
 }
 
-pub fn tuck<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+pub fn tuck<B>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
     stack.push(arg1);
@@ -418,19 +417,18 @@ pub fn symbol_sym(sym: String) -> Sym<f64, HashMap<String, f64>> {
     Sym { name: sym, arity: Arity::new(0, 1), fun: f }
 }
 
-/*
-pub fn node<'a, A: 'static, B: Clone + 'static>(sym: &'a Sym<A, B>, num_in: usize) {
+pub fn node<A, B>(sym: Sym<A, B>, num_in: usize) {
+    let name = sym.name.clone();
     let f: Rc<Fn(&mut Vec<Node<A, B>>, &mut B)> =
         Rc::new(move |stack: &mut Vec<Node<A, B>>, state: &mut B| {
-            let children = Vec::new();
+            let mut children = Vec::new();
             for _ in 0..num_in {
                 children.push(stack.pop().unwrap());
             }
-            stack.push(Node::Node(sym, children));
+            stack.push(Node::Node(sym.clone(), children));
         });
-    Sym::new(sym.name.clone(), Arity::new(num_in, 1), f);
+    Sym::new(name, Arity::new(num_in, 1), f);
 }
-*/
 
 pub fn point_mutation_naive<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rng: &mut R) {
     for ind in pop.0.iter_mut() {

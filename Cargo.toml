@@ -3,6 +3,22 @@ name = "rgep"
 version = "0.1.0"
 authors = ["Noah Ryan <noah.m.ryan@nasa.gov>"]
 
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.release]
+opt-level = 3
+debug = false
+
 [dependencies]
 statrs = "0.10"
-rand = "0.6"
+rand = "0.5.5"
+float-cmp = "0.4"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "bench"
+harness = false

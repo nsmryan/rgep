@@ -13,7 +13,10 @@ use rgep::*;
 
 fn main() {
     let terminals =
-        vec!(zero_sym(), one_sym(), two_sym(), symbol_sym("x".to_string()));
+        vec!(zero_sym(),
+             one_sym(),
+             two_sym(),
+             symbol_sym("x".to_string()));
 
     let functions =
         vec!(plus_sym(),

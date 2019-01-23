@@ -245,7 +245,7 @@ impl<A, B> Sym<A, B> {
 }
 
 #[derive(Clone)]
-enum Node<A, B> {
+pub enum Node<A, B> {
     Node(Sym<A, B>, Vec<Node<A, B>>),
     Leaf(Sym<A, B>)
 }
@@ -267,7 +267,7 @@ impl<A: Clone, B: Clone> Node<A, B> {
 
             Node::Node(sym, children) => {
                 for node in children.iter().rev() {
-                    syms.push(sym.clone());
+                    node.linearize_helper(syms);
                 }
                 syms.push(sym.clone());
             },
@@ -449,7 +449,7 @@ pub fn symbol_sym(sym: String) -> Sym<f64, HashMap<String, f64>> {
     Sym { name: sym, arity: Arity::new(0, 1), fun: f }
 }
 
-pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>) {
+pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>) -> Sym<Node<A, B>, B> {
     let name = sym.name.clone();
     let num_in = sym.arity.num_in;
     let f: Rc<Fn(&mut Vec<Node<A, B>>, &mut B)> =
@@ -464,7 +464,7 @@ pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>) {
                 stack.push(Node::Node(sym.clone(), children));
             }
         });
-    Sym::new(name, Arity::new(num_in, 1), f);
+    Sym::new(name, Arity::new(num_in, 1), f)
 }
 
 pub fn point_mutation_naive<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rng: &mut R) {
@@ -689,8 +689,8 @@ pub fn cross_at_points(pair: &mut [Ind], bits_per_sym: usize, cross_points: &[us
 
 #[test]
 fn test_cross_at_points() {
-    let mut ind1 = Ind(vec!(0x00, 0x00, 0x00, 0x00, 0x00));
-    let mut ind2 = Ind(vec!(0x0F, 0x0F, 0x0F, 0x0F, 0x0F));
+    let ind1 = Ind(vec!(0x00, 0x00, 0x00, 0x00, 0x00));
+    let ind2 = Ind(vec!(0x0F, 0x0F, 0x0F, 0x0F, 0x0F));
 
     let pair = &mut [ind1, ind2];
 

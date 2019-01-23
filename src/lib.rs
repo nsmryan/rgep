@@ -5,7 +5,6 @@ extern crate statrs;
 
 use std::cmp::max;
 use std::ops::Add;
-use std::iter::Sum;
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -152,7 +151,7 @@ impl<'a, A, B> Program<'a, A, B> {
 pub struct Pop(pub Vec<Ind>);
 
 impl Pop {
-    pub fn create<A, R, B>(params: &Params, context: &Context<A, B>, rng: &mut R) -> Pop 
+    pub fn create<A, R, B>(params: &Params, context: &Context<A, B>, _rng: &mut R) -> Pop 
     where R: Rng, A: Clone, B: Clone {
         let mut pop = Vec::with_capacity(params.pop_size);
 
@@ -221,11 +220,19 @@ fn test_arity_simple_cases() {
     assert!(ar3 + ar1 == Arity::new(7, 2), format!("arity was {:?}", ar1 + ar3));
 }
 
-#[derive(Clone)]
 pub struct Sym<A, B> {
     pub name: String,
     pub arity: Arity,
     pub fun: Rc<Fn(&mut Vec<A>, &mut B)>,
+}
+
+impl<A: Clone, B: Clone> Clone for Sym<A, B> {
+    fn clone(&self) -> Self {
+        Sym { name: self.name.clone(),
+              arity: self.arity,
+              fun: self.fun.clone(),
+        }
+    }
 }
 
 impl<A, B> Sym<A, B> {
@@ -356,7 +363,7 @@ pub fn rot<B>(stack: &mut Vec<f64>, _b: &mut B) {
 
 pub fn nip<B>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
-    let arg2 = stack.pop().unwrap();
+    let _arg2 = stack.pop().unwrap();
     stack.push(arg1);
 }
 
@@ -417,15 +424,19 @@ pub fn symbol_sym(sym: String) -> Sym<f64, HashMap<String, f64>> {
     Sym { name: sym, arity: Arity::new(0, 1), fun: f }
 }
 
-pub fn node<A, B>(sym: Sym<A, B>, num_in: usize) {
+pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>, num_in: usize) {
     let name = sym.name.clone();
     let f: Rc<Fn(&mut Vec<Node<A, B>>, &mut B)> =
-        Rc::new(move |stack: &mut Vec<Node<A, B>>, state: &mut B| {
+        Rc::new(move |stack: &mut Vec<Node<A, B>>, _state: &mut B| {
             let mut children = Vec::new();
-            for _ in 0..num_in {
-                children.push(stack.pop().unwrap());
+            if num_in == 0 {
+                stack.push(Node::Leaf(sym.clone()))
+            } else {
+                for _ in 0..num_in {
+                    children.push(stack.pop().unwrap());
+                }
+                stack.push(Node::Node(sym.clone(), children));
             }
-            stack.push(Node::Node(sym.clone(), children));
         });
     Sym::new(name, Arity::new(num_in, 1), f);
 }
@@ -449,10 +460,6 @@ pub fn point_mutate_naive<R: Rng>(ind: &mut Ind, bits_used: usize, pm: f64, rng:
 }
 
 pub fn point_mutation<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rng: &mut R) {
-    let ind_len_bits = pop.0[0].0.len() * bits_used;
-
-    let sampler = Geometric::new(pm).unwrap();
-
     for ind in pop.0.iter_mut() {
         point_mutate(ind, bits_used, pm, rng);
     }

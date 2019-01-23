@@ -7,9 +7,6 @@ extern crate statrs;
 use std::collections::HashMap;
 
 use rand::prelude::*;
-use rand::distributions::Distribution;
-
-use statrs::distribution::{Uniform};
 
 use rgep::*;
 
@@ -51,7 +48,7 @@ fn main() {
     let mut rng = thread_rng();
 
     let default = context.default;
-    let eval_prog: &EvalFunction<f64, Variables, ThreadRng> = &move |prog: &Program<f64, Variables>, state: &mut Variables, r: &mut ThreadRng| -> f64 {
+    let eval_prog: &EvalFunction<f64, Variables, ThreadRng> = &move |prog: &Program<f64, Variables>, state: &mut Variables, _r: &mut ThreadRng| -> f64 {
         let mut sample_points = Vec::new();
         for x in (0..100).step_by(10) {
             sample_points.push((x as f64, (x * x) as f64));

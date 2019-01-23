@@ -4,6 +4,8 @@ extern crate statrs;
 #[cfg(test)] extern crate float_cmp;
 
 
+use std::collections::HashMap;
+
 use rand::prelude::*;
 use rand::distributions::Distribution;
 
@@ -14,14 +16,14 @@ use rgep::*;
 
 fn main() {
     let terminals =
-        vec!(zero_sym::<()>(), one_sym::<()>(), two_sym::<()>());
+        vec!(zero_sym(), one_sym(), two_sym(), symbol_sym("x".to_string()));
 
     let functions =
-        vec!(plus_sym::<()>(),
-             mult_sym::<()>(),
-             //dup_sym::<()>(),
-             //swap_sym::<()>(),
-             //drop_sym::<()>(),
+        vec!(plus_sym(),
+             mult_sym(),
+             dup_sym(),
+             //swap_sym(),
+             //drop_sym(),
              );
 
     let params: Params = Params {
@@ -40,30 +42,47 @@ fn main() {
         default: 0.0,
     };
 
+    let mut variables: Variables = HashMap::new();
+    variables.insert("x".to_string(), 3.0);
+
     println!("bits = {}", context.bits_per_sym());
     println!("bytes = {}", context.bytes_per_sym());
     
     let mut rng = thread_rng();
 
-    let context_clone = context.clone();
-    let eval_ind: &EvalFunction<(), ThreadRng> = &move |ind: &Ind, state: &mut (), r: &mut ThreadRng| -> f64 {
-        ind.eval(&context_clone, &mut ())
+    let default = context.default;
+    let eval_prog: &EvalFunction<f64, Variables, ThreadRng> = &move |prog: &Program<f64, Variables>, state: &mut Variables, r: &mut ThreadRng| -> f64 {
+        let mut sample_points = Vec::new();
+        for x in (0..100).step_by(10) {
+            sample_points.push((x as f64, (x * x) as f64));
+        }
+        let mut fitness = 0.0;
+        for point in sample_points {
+            state.insert("x".to_string(), point.0);
+            let y_actual = prog.eval(state, default);
+            fitness += (y_actual - point.1).abs();
+        }
+        if fitness == 0.0 {
+            0.0
+        } else {
+            1.0 / fitness
+        }
     };
 
     let pop = rgep(&params,
                    &context,
-                   &(),
-                   eval_ind,
+                   &variables,
+                   eval_prog,
                    &mut rng);
     for ind in pop.0.iter() {
-        let fitness = eval_ind(&ind, &mut (), &mut rng);
+        let fitness = eval_prog(&ind.compile(&context), &mut variables, &mut rng);
         println!("{} -> {}", ind.to_string(&context), fitness);
     }
 
     println!("best fitness = {}",
              pop.0.iter()
                   .cloned()
-                  .map(|ind| eval_ind(&ind, &mut (), &mut rng))
+                  .map(|ind| eval_prog(&ind.compile(&context), &mut variables, &mut rng))
                   .fold(0.0 / 0.0, f64::max));
 }
 

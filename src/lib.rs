@@ -6,7 +6,9 @@ extern crate statrs;
 use std::cmp::max;
 use std::ops::Add;
 use std::iter::Sum;
+use std::boxed::Box;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use rand::prelude::*;
 use rand::distributions::Distribution;
@@ -16,7 +18,8 @@ use statrs::distribution::{Uniform, Geometric};
 #[cfg(test)] use float_cmp::*;
 
 
-pub type EvalFunction<B, R> = Fn(&Ind, &mut B, &mut R) -> f64;
+pub type EvalFunction<A, B, R> = Fn(&Program<A, B>, &mut B, &mut R) -> f64;
+pub type Variables = HashMap<String, f64>;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Ind(pub Vec<u8>);
@@ -40,20 +43,20 @@ impl Ind {
 
     pub fn eval_with_stack<A: Clone, B: Clone>(&self, context: &Context<A, B>, stack: &Vec<A>, b: &mut B) -> A {
         let mut local_stack = stack.clone();
-        self.execute_with_stack(context, &mut local_stack, b);
+        self.exec_with_stack(context, &mut local_stack, b);
         match local_stack.pop() {
             Some(result) => result,
             None => context.default.clone(),
         }
     }
 
-    pub fn execute<A: Clone, B: Clone>(&self, context: &Context<A, B>, b: &mut B) -> Vec<A> {
+    pub fn exec<A: Clone, B: Clone>(&self, context: &Context<A, B>, b: &mut B) -> Vec<A> {
         let mut stack = Vec::new();
-        self.execute_with_stack(context, &mut stack, b);
+        self.exec_with_stack(context, &mut stack, b);
         stack
     }
 
-    pub fn execute_with_stack<A: Clone, B: Clone>(&self, context: &Context<A, B>, stack: &mut Vec<A>, b: &mut B) {
+    pub fn exec_with_stack<A: Clone, B: Clone>(&self, context: &Context<A, B>, stack: &mut Vec<A>, b: &mut B) {
         for code in self.0.iter() {
             let sym = context.decode(*code);
             if stack.len() >= sym.arity.num_in {
@@ -61,12 +64,30 @@ impl Ind {
             }
         }
     }
+
+    pub fn compile<'a, A: Clone, B: Clone>(&self, context: &'a Context<A, B>) -> Program<'a, A, B> {
+        let mut program = Program(Vec::with_capacity(self.0.len()));
+
+        self.compile_to(context, &mut program);
+
+        program
+    }
+
+    pub fn compile_to<'a, A: Clone, B: Clone>(&self,
+                                              context: &'a Context<A, B>,
+                                              prog: &mut Program<'a, A, B>) {
+        prog.0.clear();
+        for code in self.0.iter() {
+            let sym = context.decode(*code);
+            prog.0.push(sym);
+        }
+    }
 }
 
 #[test]
 fn test_eval_simple_equation() {
     let terminals =
-        vec!(zero_sym::<()>(), one_sym(), two_sym());
+        vec!(zero_sym(), one_sym(), two_sym());
 
     let functions = vec!(plus_sym());
 
@@ -85,6 +106,49 @@ fn test_eval_simple_equation() {
     assert!(result.approx_eq(&3.0, 2.0 * ::std::f64::EPSILON, 2), format!("result was {}", result))
 }
 
+pub struct Program<'a, A: 'static, B: 'static>(pub Vec<&'a Sym<A, B>>);
+
+impl<'a, A: 'static, B: 'static> Program<'a, A, B> {
+    pub fn eval(&self, state: &mut B, default: A) -> A {
+        let mut stack = Vec::new();
+        self.eval_with_stack(state, default, &mut stack)
+    }
+
+    pub fn eval_with_stack(&self, state: &mut B, default: A, stack: &mut Vec<A>) -> A {
+        self.exec_with_stack(state, stack);
+        if stack.len() > 0 {
+            stack.pop().unwrap()
+        } else {
+            default
+        }
+    }
+
+    pub fn exec(&self, state: &mut B) -> Vec<A> {
+        let mut stack = Vec::new();
+        self.exec_with_stack(state, &mut stack);
+        stack
+    }
+
+    pub fn exec_with_stack(&self, state: &mut B, stack: &mut Vec<A>) {
+        for sym in self.0.iter() {
+            if stack.len() >= sym.arity.num_in {
+                (sym.fun)(stack, state);
+            }
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut string = "".to_string();
+
+        for sym in self.0.iter() {
+            string.push_str(&sym.name);
+            string.push_str(&"");
+        }
+
+        string
+    }
+}
+
 #[derive(Debug)]
 pub struct Pop(pub Vec<Ind>);
 
@@ -97,7 +161,6 @@ impl Pop {
 
         let bits_needed = context.bits_per_sym();
         assert!(bits_needed <= 8, "This implementation does not currently support multiple byte symbols");
-        let bytes_per_sym = ((bits_needed as f64) / 8.0).ceil() as usize;
 
         let range = 2_u32.pow(bits_needed as u32);
 
@@ -160,10 +223,25 @@ fn test_arity_simple_cases() {
 }
 
 #[derive(Clone)]
-pub struct Sym<'a, A: 'static, B: 'static> {
-    pub name: &'static str,
+pub struct Sym<A: 'static, B: 'static> {
+    pub name: String,
     pub arity: Arity,
-    pub fun: &'a Fn(&mut Vec<A>, &mut B),
+    pub fun: Rc<Fn(&mut Vec<A>, &mut B)>,
+}
+
+impl<A: 'static, B: 'static> Sym<A, B> {
+    pub fn new(name: String, arity: Arity, fun: Rc<Fn(&mut Vec<A>, &mut B)>) -> Sym<A, B> {
+        Sym { name: name,
+              arity: arity,
+              fun: fun,
+        }
+    }
+}
+
+#[derive(Clone)]
+enum Node<A: 'static, B: 'static> {
+    Node(Sym<A, B>, Vec<Node<A, B>>),
+    Leaf(Sym<A, B>)
 }
 
 #[derive(Clone)]
@@ -193,15 +271,14 @@ impl Default for Params {
     }
 }
 
-#[derive(Clone)]
-pub struct Context<'a, A: Clone + 'static, B: Clone + 'static> {
-    pub terminals: Vec<Sym<'a, A, B>>,
-    pub functions: Vec<Sym<'a, A, B>>,
+pub struct Context<A: Clone + 'static, B: Clone + 'static> {
+    pub terminals: Vec<Sym<A, B>>,
+    pub functions: Vec<Sym<A, B>>,
 
     pub default: A,
 }
 
-impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
+impl<A: Clone, B: Clone + 'static> Context<A, B> {
     pub fn num_symbols(&self) -> usize {
         self.terminals.len() + self.functions.len()
     }
@@ -216,110 +293,146 @@ impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
     }
 }
 
-impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
-    pub fn decode(&self, code: u8) -> Sym<'a, A, B> {
+impl<A: Clone, B: Clone + 'static> Context<A, B> {
+    pub fn decode(&self, code: u8) -> &Sym<A, B> {
         let is_function = (code & 1) == 1;
         let index = (code >> 1) as usize;
         if is_function {
-            self.functions[index % self.functions.len()].clone()
+            &self.functions[index % self.functions.len()]
         } else {
-            self.terminals[index % self.terminals.len()].clone()
+            &self.terminals[index % self.terminals.len()]
         }
     }
 }
 
-pub fn zero<B: 'static>(stack: &mut Vec<f64>, b: &mut B) {
+pub fn zero<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
     stack.push(0.0);
 }
 
-pub fn one<B: 'static>(stack: &mut Vec<f64>, b: &mut B) {
+pub fn one<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
     stack.push(1.0);
 }
 
-pub fn two<B: 'static>(stack: &mut Vec<f64>, b: &mut B) {
+pub fn two<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
     stack.push(2.0);
 }
 
-pub fn plus<B: 'static>(stack: &mut Vec<f64>, b: &mut B) {
+pub fn plus<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
     stack.push(arg1 + arg2);
 }
 
-pub fn mult<B: 'static>(stack: &mut Vec<f64>, b: &mut B) {
+pub fn mult<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
     stack.push(arg1 * arg2);
 }
 
-pub fn dup<B: 'static>(stack: &mut Vec<f64>, b: &mut B) {
+pub fn dup<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
     let head = stack.pop().unwrap();
     stack.push(head);
     stack.push(head);
 }
 
-pub fn swap<B: 'static>(stack: &mut Vec<f64>, b: &mut B) {
+pub fn swap<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
     stack.push(arg1);
     stack.push(arg2);
 }
 
-pub fn drop<B: 'static>(stack: &mut Vec<f64>, b: &mut B) {
+pub fn drop<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
     stack.pop().unwrap();
 }
 
-pub fn zero_sym<'a, B: Clone + 'static>() -> Sym<'a, f64, B> {
-    let f: &'static Fn(&mut Vec<f64>, &mut B) = &zero;
-    Sym { name: "0", arity: Arity::new(0, 1), fun: f }
+pub fn rot<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+    let arg1 = stack.pop().unwrap();
+    let arg2 = stack.pop().unwrap();
+    let arg3 = stack.pop().unwrap();
+    stack.push(arg1);
+    stack.push(arg3);
+    stack.push(arg2);
 }
 
-pub fn one_sym<'a, B: Clone + 'static>() ->  Sym<'a, f64, B> {
-    let f: &'static Fn(&mut Vec<f64>, &mut B) = &one;
-    Sym { name: "1", arity: Arity::new(0, 1), fun: f  }
+pub fn nip<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+    let arg1 = stack.pop().unwrap();
+    let arg2 = stack.pop().unwrap();
+    stack.push(arg1);
 }
 
-pub fn two_sym<'a, B: Clone + 'static>() ->  Sym<'a, f64, B> {
-    let f: &'static Fn(&mut Vec<f64>, &mut B) = &two;
-    Sym { name: "2", arity: Arity::new(0, 1), fun: f  }
+pub fn tuck<B: 'static>(stack: &mut Vec<f64>, _b: &mut B) {
+    let arg1 = stack.pop().unwrap();
+    let arg2 = stack.pop().unwrap();
+    stack.push(arg1);
+    stack.push(arg2);
+    stack.push(arg1);
 }
 
-pub fn plus_sym<'a, B: Clone + 'static>() -> Sym<'a, f64, B> {
-    let f: &'a Fn(&mut Vec<f64>, &mut B) = &plus;
-    Sym { name: "+", arity: Arity::new(2, 1), fun: f }
+pub fn zero_sym<B:'static>() -> Sym<f64, B> {
+    Sym::new("0".to_string(), Arity::new(0, 1), Rc::new(zero))
 }
 
-pub fn mult_sym<'a, B: Clone + 'static>() -> Sym<'a, f64, B> {
-    let f: &'a Fn(&mut Vec<f64>, &mut B) = &mult;
-    Sym { name: "*", arity: Arity::new(2, 1), fun: f }
+pub fn one_sym<B:'static>() ->  Sym<f64, B> {
+    Sym::new("1".to_string(), Arity::new(0, 1), Rc::new(one))
 }
 
-pub fn dup_sym<'a, B: Clone + 'static>() -> Sym<'a, f64, B> {
-    let f: &'a Fn(&mut Vec<f64>, &mut B) = &dup;
-    Sym { name: "dup", arity: Arity::new(1, 2), fun: f }
+pub fn two_sym<B:'static>() ->  Sym<f64, B> {
+    Sym::new("2".to_string(), Arity::new(0, 1), Rc::new(two))
 }
 
-pub fn swap_sym<'a, B: Clone + 'static>() -> Sym<'a, f64, B> {
-    let f: &'a Fn(&mut Vec<f64>, &mut B) = &swap;
-    Sym { name: "swap", arity: Arity::new(2, 2), fun: f }
+pub fn plus_sym<B:'static>() -> Sym<f64, B> {
+    Sym::new("+".to_string(), Arity::new(2, 1), Rc::new(plus))
 }
 
-pub fn drop_sym<'a, B: Clone + 'static>() -> Sym<'a, f64, B> {
-    let f: &'a Fn(&mut Vec<f64>, &mut B) = &drop;
-    Sym { name: "drop", arity: Arity::new(1, 0), fun: f }
+pub fn mult_sym<B:'static>() -> Sym<f64, B> {
+    Sym::new("*".to_string(), Arity::new(2, 1), Rc::new(mult))
 }
 
-pub fn symbol_sym<'a>(sym: String) -> Sym<'a, f64, HashMap<String, f64>> {
-    let f: &'a Fn(&mut Vec<f64>, &mut HashMap<String, f64>) =
-        &move |stack: &mut Vec<f64>, map: &mut HashMap<String, f64>| {
-            stack.push(*map.get(&sym).unwrap());
-    };
-    Sym { name: "drop", arity: Arity::new(0, 1), fun: f }
+pub fn dup_sym<B:'static>() -> Sym<f64, B> {
+    Sym::new("dup".to_string(), Arity::new(1, 2), Rc::new(dup))
 }
+
+pub fn swap_sym<B:'static>() -> Sym<f64, B> {
+    Sym::new("swap".to_string(), Arity::new(2, 2), Rc::new(swap))
+}
+
+pub fn drop_sym<B:'static>() -> Sym<f64, B> {
+    Sym::new("drop".to_string(), Arity::new(1, 0), Rc::new(drop))
+}
+
+pub fn nip_sym<B:'static>() -> Sym<f64, B> {
+    Sym::new("drop".to_string(), Arity::new(2, 1), Rc::new(nip))
+}
+
+pub fn tuck_sym<B:'static>() -> Sym<f64, B> {
+    Sym::new("tuck".to_string(), Arity::new(2, 3), Rc::new(tuck))
+}
+
+pub fn symbol_sym(sym: String) -> Sym<f64, HashMap<String, f64>> {
+    let name = sym.clone();
+    let f: Rc<Fn(&mut Vec<f64>, &mut HashMap<String, f64>)> =
+        Rc::new(move |stack: &mut Vec<f64>, map: &mut HashMap<String, f64>| {
+            stack.push(*map.get(&name).unwrap());
+    });
+    Sym { name: sym, arity: Arity::new(0, 1), fun: f }
+}
+
+/*
+pub fn node<'a, A: 'static, B: Clone + 'static>(sym: &'a Sym<A, B>, num_in: usize) {
+    let f: Rc<Fn(&mut Vec<Node<A, B>>, &mut B)> =
+        Rc::new(move |stack: &mut Vec<Node<A, B>>, state: &mut B| {
+            let children = Vec::new();
+            for _ in 0..num_in {
+                children.push(stack.pop().unwrap());
+            }
+            stack.push(Node::Node(sym, children));
+        });
+    Sym::new(sym.name.clone(), Arity::new(num_in, 1), f);
+}
+*/
 
 pub fn point_mutation_naive<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rng: &mut R) {
-    let sampler = Uniform::new(0.0, 1.0).unwrap();
-
     for ind in pop.0.iter_mut() {
         point_mutate_naive(ind, bits_used, pm, rng);
     }
@@ -368,11 +481,11 @@ pub fn point_mutate<R: Rng>(ind: &mut Ind, bits_used: usize, pm: f64, rng: &mut 
 
 #[test]
 fn test_point_mutation_flips_bits() {
-    let terminals =
-        vec!(zero_sym::<()>(), one_sym::<()>(), two_sym::<()>());
+    let terminals: Vec<Sym<f64, ()>> =
+        vec!(zero_sym(), one_sym(), two_sym());
 
     let functions =
-        vec!(plus_sym::<()>());
+        vec!(plus_sym());
 
     let num_inds  = 200;
     let num_words = 200;
@@ -461,8 +574,6 @@ fn test_cross_at_point() {
 }
 
 pub fn crossover_two_point<R: Rng>(pop: &mut Pop, words_per_ind: usize, bits_per_sym: usize, pc2: f64, rng: &mut R) {
-    let ind_len = pop.0[0].0.len();
-
     let pc2_sampler = Uniform::new(0.0, 1.0).unwrap();
     let cross_point_sampler = Uniform::new(0.0, (words_per_ind * bits_per_sym) as f64).unwrap();
 
@@ -625,7 +736,7 @@ pub fn rotation<R: Rng>(pop: &mut Pop, pr: f64, rng: &mut R) {
     for ind in pop.0.iter_mut() {
         if rotation_sampler.sample(rng) < pr {
             let rotation_point = rotation_point_sampler.sample(rng) as usize;
-
+            rotate(ind, rotation_point);
         }
     }
 }
@@ -636,7 +747,6 @@ pub fn rotate(ind: &mut Ind, rotation_point: usize) {
     let mut index = 0;
     let mut tmp = ind.0[0];
 
-    let mut tmp = ind.0[0];
     for _ in 0..ind.0.len() {
         let other_index = (index + rotation_point) % ind_len; 
 
@@ -662,7 +772,10 @@ fn test_rotate() {
 }
 
 pub fn stochastic_universal_sampling<R: Rng>(pop: &Pop, fitnesses: Vec<f64>, rng: &mut R) -> Pop {
-    let increment = fitnesses.iter().sum::<f64>() / fitnesses.len() as f64;
+    let total_fitness = fitnesses.iter().sum::<f64>();
+    assert!(total_fitness != 0.0, "Cannot sample when all fitness values are 0.0!");
+
+    let increment = total_fitness / fitnesses.len() as f64;
     let offset = Uniform::new(0.0, increment).unwrap().sample(rng);
 
     select_stochastic_universal(pop, fitnesses, offset, increment)
@@ -692,35 +805,37 @@ pub fn select_stochastic_universal(pop: &Pop, fitnesses: Vec<f64>, offset: f64, 
 }
 
 pub fn evaluate<R, A, B>(pop: &Pop,
-                     context: &Context<A, B>,
-                     state: &B,
-                     eval_ind: &EvalFunction<B, R>,
-                     rng: &mut R) -> Vec<f64>
+                         context: &Context<A, B>,
+                         state: &B,
+                         eval_prog: &EvalFunction<A, B, R>,
+                         rng: &mut R) -> Vec<f64>
     where R: Rng,
           A: Clone,
           B: Clone {
     let mut fitnesses = Vec::new();
 
+    let mut prog = Program(Vec::with_capacity(pop.0[0].0.len()));
+
     for ind in pop.0.iter() {
         let mut local_state = state.clone();
-        //let f: F = |context: &Context<A, B>| -> A { ind.eval(context, &mut state) };
-        let fitness = eval_ind(ind, &mut local_state, rng);
+        ind.compile_to(context, &mut prog);
+        let fitness = eval_prog(&prog, &mut local_state, rng);
         fitnesses.push(fitness);
     }
 
     fitnesses
 }
 
-pub fn rgep<R: Rng, B: Clone>(params: &Params,
-                          context: &Context<f64, B>,
+pub fn rgep<R: Rng, A: Clone, B: Clone>(params: &Params,
+                          context: &Context<A, B>,
                           state: &B,
-                          eval_ind: &EvalFunction<B, R>,
+                          eval_ind: &EvalFunction<A, B, R>,
                           rng: &mut R) -> Pop {
     let mut pop = Pop::create(&params, &context, rng);
 
     let bits_per_sym = context.bits_per_sym();
 
-    for num_gen in 0..params.num_gens {
+    for _ in 0..params.num_gens {
         rotation(&mut pop, params.prob_rotation, rng);
         point_mutation(&mut pop, bits_per_sym, params.prob_mut, rng);
         crossover_one_point(&mut pop, params.ind_size, bits_per_sym, params.prob_one_point_crossover, rng);

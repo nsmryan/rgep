@@ -9,19 +9,21 @@ use std::collections::HashMap;
 use rand::prelude::*;
 
 use rgep::*;
+use rgep::types::*;
+use rgep::ops::*;
 
 
 fn main() {
     let terminals =
-        vec!(zero_sym(),
-             one_sym(),
-             two_sym(),
-             symbol_sym("x".to_string()));
+        vec!(const_expr(0.0),
+             const_expr(1.0),
+             const_expr(2.0),
+             var_expr("x".to_string()));
 
     let functions =
-        vec!(plus_sym(),
-             mult_sym(),
-             dup_sym(),
+        vec!(add_expr(),
+             mult_expr(),
+             //dup_sym(),
              //swap_sym(),
              //drop_sym(),
              );
@@ -39,7 +41,7 @@ fn main() {
     let context = Context {
         terminals: terminals,
         functions: functions,
-        default: 0.0,
+        default: Arith::Const(0.0),
     };
 
     let mut variables: Variables = HashMap::new();
@@ -50,24 +52,25 @@ fn main() {
     
     let mut rng = thread_rng();
 
-    let default = context.default;
-    let eval_prog: &EvalFunction<f64, Variables, ThreadRng> = &move |prog: &Program<f64, Variables>, state: &mut Variables, _r: &mut ThreadRng| -> f64 {
-        let mut sample_points = Vec::new();
-        for x in (0..100).step_by(10) {
-            sample_points.push((x as f64, (x * x) as f64));
-        }
-        let mut fitness = 0.0;
-        for point in sample_points {
-            state.insert("x".to_string(), point.0);
-            let y_actual = prog.eval(state, default);
-            fitness += (y_actual - point.1).abs();
-        }
-        if fitness == 0.0 {
-            0.0
-        } else {
-            1.0 / fitness
-        }
-    };
+    let default = context.default.clone();
+    let eval_prog: &EvalFunction<Arith, Variables, ThreadRng> =
+        &move |prog: &Program<Arith, Variables>, state: &mut Variables, _r: &mut ThreadRng| -> f64 {
+            let mut sample_points = Vec::new();
+            for x in (0..100).step_by(10) {
+                sample_points.push((x as f64, (x * x) as f64));
+            }
+            let mut fitness = 0.0;
+            for point in sample_points {
+                state.insert("x".to_string(), point.0);
+                let y_actual = prog.eval(state, default.clone()).eval(state);
+                fitness += (y_actual - point.1).abs();
+            }
+            if fitness == 0.0 {
+                0.0
+            } else {
+                1.0 / fitness
+            }
+        };
 
     let pop = rgep(&params,
                    &context,
@@ -79,10 +82,20 @@ fn main() {
         println!("{} -> {}", ind.to_string(&context), fitness);
     }
 
-    println!("best fitness = {}",
-             pop.0.iter()
-                  .cloned()
-                  .map(|ind| eval_prog(&ind.compile(&context), &mut variables, &mut rng))
-                  .fold(0.0 / 0.0, f64::max));
+    let (index, fitness) = 
+        pop.0.iter()
+             .cloned()
+             .map(|ind| eval_prog(&ind.compile(&context), &mut variables, &mut rng))
+             .enumerate()
+             .fold((0, 0.0), |(best_index, best_fitness), (index, fitness)| {
+                if fitness > best_fitness {
+                    (index, fitness)
+                } else {
+                    (best_index, best_fitness)
+                }
+            });
+    println!("best fitness    = {}", fitness);
+    println!("best individual = {:?}", pop.0[index].to_string(&context));
+    println!("infix = {:?}", pop.0[index].eval(&context, &mut variables).simplify().to_string_infix());
 }
 

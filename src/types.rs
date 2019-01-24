@@ -313,7 +313,7 @@ impl Default for Params {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct GaParams {
     pub ind_size: usize,
     pub pop_size: usize,
@@ -322,8 +322,20 @@ pub struct GaParams {
 
     pub prob_pm: f64,
     pub prob_pc1: f64,
-    pub prob_mut: f64,
 }
+
+impl Default for GaParams {
+    fn default() -> GaParams {
+        GaParams {
+            ind_size: 100,
+            pop_size: 100,
+            num_gens: 1000,
+            prob_pm: 0.01,
+            prob_pc1: 0.6,
+        }
+    }
+}
+
 
 #[derive(Clone)]
 pub enum Node<A, B> {

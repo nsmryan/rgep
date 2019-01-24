@@ -330,6 +330,13 @@ pub fn tuck<A: Clone, B>(stack: &mut Vec<A>, _b: &mut B) {
     stack.push(arg1);
 }
 
+pub fn make_const<A: 'static, B: 'static>(name: String, constant: A) -> Sym<A, B> {
+    let zero: Fn(&mut Vec<f64>, &mut B) = |stack, context| {
+        stack.push(0.0);
+    };
+    Sym::new(constant.to_string(), Arity::new(0, 1), Rc::new(zero))
+}
+
 pub fn zero_sym<B:'static>() -> Sym<f64, B> {
     Sym::new("0".to_string(), Arity::new(0, 1), Rc::new(zero))
 }

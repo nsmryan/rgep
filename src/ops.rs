@@ -52,8 +52,8 @@ impl Arith {
 
     pub fn is_leaf(&self) -> bool {
         match self {
-            Arith::Const(constant) => true,
-            Arith::Var(name) => true,
+            Arith::Const(_) => true,
+            Arith::Var(_) => true,
             _ => false,
         }
     }
@@ -266,18 +266,6 @@ pub fn var_expr(name: String) -> Sym<Arith, Variables> {
     Sym { name: sym_name, arity: Arity::new(0, 1), fun: f }
 }
 
-pub fn zero<B>(stack: &mut Vec<f64>, _b: &mut B) {
-    stack.push(0.0);
-}
-
-pub fn one<B>(stack: &mut Vec<f64>, _b: &mut B) {
-    stack.push(1.0);
-}
-
-pub fn two<B>(stack: &mut Vec<f64>, _b: &mut B) {
-    stack.push(2.0);
-}
-
 pub fn plus<B>(stack: &mut Vec<f64>, _b: &mut B) {
     let arg1 = stack.pop().unwrap();
     let arg2 = stack.pop().unwrap();
@@ -330,31 +318,55 @@ pub fn tuck<A: Clone, B>(stack: &mut Vec<A>, _b: &mut B) {
     stack.push(arg1);
 }
 
-pub fn make_const<A: 'static, B: 'static>(name: String, constant: A) -> Sym<A, B> {
-    let zero: Fn(&mut Vec<f64>, &mut B) = |stack, context| {
-        stack.push(0.0);
-    };
-    Sym::new(constant.to_string(), Arity::new(0, 1), Rc::new(zero))
+pub fn make_const<A: 'static + ToString + Copy, B: 'static>(constant: A) -> Sym<A, B> {
+    let f: Rc<Fn(&mut Vec<A>, &mut B)> = Rc::new(move |stack, _context| {
+        stack.push(constant);
+    });
+    Sym::new(constant.to_string(), Arity::new(0, 1), f)
+}
+
+pub fn make_binary<A, B>(name: &str, f: Rc<Fn(A, A) -> A>) -> Sym<A, B>
+    where A: 'static + ToString + Copy, B: 'static {
+    let f: Rc<Fn(&mut Vec<A>, &mut B)> = Rc::new(move |stack, _context| {
+        let arg1 = stack.pop().unwrap();
+        let arg2 = stack.pop().unwrap();
+        stack.push(f(arg1, arg2));
+    });
+    Sym::new(name.to_string(), Arity::new(2, 1), f)
 }
 
 pub fn zero_sym<B:'static>() -> Sym<f64, B> {
-    Sym::new("0".to_string(), Arity::new(0, 1), Rc::new(zero))
+    make_const(0.0)
 }
 
 pub fn one_sym<B:'static>() ->  Sym<f64, B> {
-    Sym::new("1".to_string(), Arity::new(0, 1), Rc::new(one))
+    make_const(1.0)
 }
 
 pub fn two_sym<B:'static>() ->  Sym<f64, B> {
-    Sym::new("2".to_string(), Arity::new(0, 1), Rc::new(two))
+    make_const(2.0)
 }
 
 pub fn plus_sym<B:'static>() -> Sym<f64, B> {
-    Sym::new("+".to_string(), Arity::new(2, 1), Rc::new(plus))
+    make_binary("+", Rc::new(|a, b| a + b))
+}
+
+pub fn sub_sym<B:'static>() -> Sym<f64, B> {
+    make_binary("-", Rc::new(|a, b| a - b))
 }
 
 pub fn mult_sym<B:'static>() -> Sym<f64, B> {
-    Sym::new("*".to_string(), Arity::new(2, 1), Rc::new(mult))
+    make_binary("*", Rc::new(|a, b| a * b))
+}
+
+pub fn div_sym<B:'static>() -> Sym<f64, B> {
+    make_binary("/", Rc::new(|a, b| {
+        if b == 0.0 {
+            0.0
+        } else {
+            a / b
+        }
+    }))
 }
 
 pub fn dup_sym<A: 'static + Clone, B:'static>() -> Sym<A, B> {

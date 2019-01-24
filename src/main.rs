@@ -9,8 +9,6 @@ use std::collections::HashMap;
 use rand::prelude::*;
 
 use rgep::*;
-use rgep::types::*;
-use rgep::ops::*;
 
 
 fn main() {

@@ -1,5 +1,3 @@
-use std::cmp::max;
-
 use rand::prelude::*;
 use rand::distributions::Distribution;
 

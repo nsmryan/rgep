@@ -3,30 +3,28 @@ extern crate statrs;
 #[cfg(test)] extern crate float_cmp;
 
 
-use std::rc::Rc;
-
 use rand::prelude::*;
 
 pub mod types;
-use types::*;
+pub use types::*;
 
 pub mod crossover;
-use crossover::*;
+pub use crossover::*;
 
 pub mod rotation;
-use rotation::*;
+pub use rotation::*;
 
 pub mod point_mutation;
-use point_mutation::*;
+pub use point_mutation::*;
 
 pub mod ops;
-use ops::*;
+pub use ops::*;
 
 pub mod selection;
-use selection::*;
+pub use selection::*;
 
 pub mod evaluation;
-use evaluation::*;
+pub use evaluation::*;
 
 
 pub fn rgep<R: Rng, A: Clone, B: Clone>(params: &Params,

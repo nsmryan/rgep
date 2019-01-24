@@ -11,11 +11,6 @@ use criterion::Criterion;
 use rand::prelude::*;
 
 use rgep::*;
-use rgep::types::*;
-use rgep::crossover::*;
-use rgep::point_mutation::*;
-use rgep::rotation::*;
-use rgep::selection::*;
 
 
 fn bench_crossover(c: &mut Criterion) {

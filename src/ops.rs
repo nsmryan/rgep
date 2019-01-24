@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::rc::Rc;
 use std::boxed::Box;
 
@@ -264,18 +263,6 @@ pub fn var_expr(name: String) -> Sym<Arith, Variables> {
             stack.push(Arith::Var(name.clone()));
     });
     Sym { name: sym_name, arity: Arity::new(0, 1), fun: f }
-}
-
-pub fn plus<B>(stack: &mut Vec<f64>, _b: &mut B) {
-    let arg1 = stack.pop().unwrap();
-    let arg2 = stack.pop().unwrap();
-    stack.push(arg1 + arg2);
-}
-
-pub fn mult<B>(stack: &mut Vec<f64>, _b: &mut B) {
-    let arg1 = stack.pop().unwrap();
-    let arg2 = stack.pop().unwrap();
-    stack.push(arg1 * arg2);
 }
 
 pub fn dup<A: Clone, B>(stack: &mut Vec<A>, _b: &mut B) {

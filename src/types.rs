@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use std::cmp::max;
 use std::rc::Rc;
 use std::ops::Add;
+use std::iter;
+use std::iter::*;
 
 #[cfg(test)] use float_cmp::*;
 
@@ -100,6 +102,7 @@ fn test_eval_simple_equation() {
     assert!(result.approx_eq(&3.0, 2.0 * ::std::f64::EPSILON, 2), format!("result was {}", result))
 }
 
+
 pub struct Program<A, B>(pub Vec<Sym<A, B>>);
 
 impl<A, B> Program<A, B> {
@@ -143,6 +146,7 @@ impl<A, B> Program<A, B> {
     }
 }
 
+
 #[derive(Debug)]
 pub struct Pop(pub Vec<Ind>);
 
@@ -167,10 +171,15 @@ impl Pop {
         Pop(pop)
     }
 
+    pub fn create_fast<A, B>(params: &Params, context: &Context<A, B>) -> Pop 
+    where A: Clone, B: Clone {
+        let ind = Ind(iter::repeat(0x0).take(params.ind_size).collect());
+        Pop(iter::repeat(ind).take(params.pop_size).collect())
+    }
+
     pub fn create_ga<R>(params: &GaParams, rng: &mut R) -> Pop 
     where R: Rng {
         let mut pop = Vec::with_capacity(params.pop_size);
-
         for _ in 0..params.pop_size {
             let mut ind_vec = Vec::with_capacity(params.ind_size);
             for _ in 0..params.ind_size {
@@ -181,7 +190,13 @@ impl Pop {
 
         Pop(pop)
     }
+
+    pub fn create_ga_fast(params: &GaParams) -> Pop {
+        let ind = Ind(std::iter::repeat(0x0).take(params.ind_size).collect());
+        Pop(iter::repeat(ind).take(params.pop_size).collect())
+    }
 }
+
 
 #[derive(Clone, PartialEq, Eq, Debug, Copy)]
 pub struct Arity {
@@ -228,6 +243,7 @@ fn test_arity_simple_cases() {
     assert!(ar3 + ar1 == Arity::new(7, 2), format!("arity was {:?}", ar1 + ar3));
 }
 
+
 pub struct Sym<A, B> {
     pub name: String,
     pub arity: Arity,
@@ -251,6 +267,7 @@ impl<A, B> Sym<A, B> {
         }
     }
 }
+
 
 pub struct Context<A: Clone + 'static, B: Clone + 'static> {
     pub terminals: Vec<Sym<A, B>>,
@@ -286,6 +303,7 @@ impl<A: Clone, B: Clone + 'static> Context<A, B> {
     }
 }
 
+
 #[derive(Clone)]
 pub struct Params {
     pub prob_mut: f64,
@@ -295,6 +313,8 @@ pub struct Params {
 
     pub pop_size: usize,
     pub ind_size: usize,
+
+    pub elitism: usize,
 
     pub num_gens: usize,
 }
@@ -308,10 +328,12 @@ impl Default for Params {
             prob_rotation: 0.01,
             pop_size: 25,
             ind_size: 100,
+            elitism: 1,
             num_gens: 100,
         }
     }
 }
+
 
 #[derive(Clone, PartialEq)]
 pub struct GaParams {
@@ -319,6 +341,8 @@ pub struct GaParams {
     pub pop_size: usize,
 
     pub num_gens: usize,
+
+    pub elitism: usize,
 
     pub prob_pm: f64,
     pub prob_pc1: f64,
@@ -330,6 +354,7 @@ impl Default for GaParams {
             ind_size: 100,
             pop_size: 100,
             num_gens: 1000,
+            elitism: 0,
             prob_pm: 0.01,
             prob_pc1: 0.6,
         }

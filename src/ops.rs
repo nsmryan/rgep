@@ -4,6 +4,15 @@ use std::boxed::Box;
 use types::*;
 
 
+#[derive(Clone)]
+pub struct InstrState {
+    pub reg_a: f64,
+    pub reg_b: f64,
+    pub mem: Vec<f64>,
+    pub output: Vec<f64>,
+}
+
+
 #[derive(Clone, PartialEq)]
 pub enum Arith {
     Add(Box<Arith>, Box<Arith>),
@@ -356,23 +365,23 @@ pub fn div_sym<B:'static>() -> Sym<f64, B> {
     }))
 }
 
-pub fn dup_sym<A: 'static + Clone, B:'static>() -> Sym<A, B> {
+pub fn dup_sym<A: 'static + Clone, B: 'static>() -> Sym<A, B> {
     Sym::new("dup".to_string(), Arity::new(1, 2), Rc::new(dup))
 }
 
-pub fn swap_sym<B:'static>() -> Sym<f64, B> {
+pub fn swap_sym<A: 'static, B: 'static>() -> Sym<A, B> {
     Sym::new("swap".to_string(), Arity::new(2, 2), Rc::new(swap))
 }
 
-pub fn drop_sym<B:'static>() -> Sym<f64, B> {
+pub fn drop_sym<A: 'static, B: 'static>() -> Sym<A, B> {
     Sym::new("drop".to_string(), Arity::new(1, 0), Rc::new(drop))
 }
 
-pub fn nip_sym<B:'static>() -> Sym<f64, B> {
+pub fn nip_sym<A: 'static, B: 'static>() -> Sym<A, B> {
     Sym::new("drop".to_string(), Arity::new(2, 1), Rc::new(nip))
 }
 
-pub fn tuck_sym<B:'static>() -> Sym<f64, B> {
+pub fn tuck_sym<A: 'static + Clone, B: 'static>() -> Sym<A, B> {
     Sym::new("tuck".to_string(), Arity::new(2, 3), Rc::new(tuck))
 }
 

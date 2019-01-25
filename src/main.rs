@@ -21,9 +21,9 @@ fn main() {
     let functions =
         vec!(add_expr(),
              mult_expr(),
-             //dup_sym(),
-             //swap_sym(),
-             //drop_sym(),
+             dup_sym(),
+             swap_sym(),
+             drop_sym(),
              );
 
     let params: Params = Params {
@@ -31,9 +31,10 @@ fn main() {
         prob_one_point_crossover: 0.6,
         prob_two_point_crossover: 0.6,
         prob_rotation: 0.001,
-        pop_size: 25,
-        ind_size: 25,
-        num_gens: 200,
+        pop_size: 100,
+        ind_size: 100,
+        num_gens: 500,
+        elitism: 1,
     };
 
     let context = Context {

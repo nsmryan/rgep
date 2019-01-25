@@ -184,22 +184,35 @@ fn bench_rgep_operators(c: &mut Criterion) {
         let ind = Ind(iter::repeat(0x0).take(ind_len).collect());
         let pop = Pop(iter::repeat(ind).take(n).collect());
 
+        let alt_ind = Ind(iter::repeat(0x0).take(ind_len).collect());
+        let mut alt_pop = Pop(iter::repeat(alt_ind).take(n).collect());
+
         let fitnesses = (0..n).map(|f| f as f64).collect();
 
-        select_stochastic_universal(&pop, fitnesses, 0.5);
+        select_stochastic_universal(&pop, &mut alt_pop, fitnesses, 1, 0.5);
     }));
 }
 
 fn bench_selection(c: &mut Criterion) {
-    c.bench_function("select_stochastic_universal", |b| b.iter(|| {
-        let ind_len = 1;
-        let n = 1000;
-        let ind = Ind(iter::repeat(0x0).take(ind_len).collect());
-        let pop = Pop(iter::repeat(ind).take(n).collect());
+    let ind_len = 1000;
+    let n = 1000;
 
+    let ind = Ind(iter::repeat(0x0).take(ind_len).collect());
+    let pop = Pop(iter::repeat(ind).take(n).collect());
+
+    c.bench_function("select_stochastic_universal_naive", move |b| b.iter(|| {
         let fitnesses = (0..n).map(|f| f as f64).collect();
+        select_stochastic_universal_naive(&pop, fitnesses, 1, 0.5);
+    }));
 
-        select_stochastic_universal(&pop, fitnesses, 0.5);
+    let ind = Ind(iter::repeat(0x0).take(ind_len).collect());
+    let pop = Pop(iter::repeat(ind).take(n).collect());
+    let empty_ind = Ind(Vec::with_capacity(n));
+    let mut new_pop = Pop(iter::repeat(empty_ind).take(n).collect());
+
+    c.bench_function("select_stochastic_universal", move |b| b.iter(|| {
+        let fitnesses = (0..n).map(|f| f as f64).collect();
+        select_stochastic_universal(&pop, &mut new_pop, fitnesses, 1, 0.5);
     }));
 }
 
@@ -208,4 +221,4 @@ criterion_group!(crossover, bench_crossover);
 criterion_group!(rotation, bench_rotation_offsets, bench_rotation_sizes, bench_rotation_types);
 criterion_group!(rgep, bench_rgep_operators);
 criterion_group!(selection, bench_selection);
-criterion_main!(rgep, selection, crossover, rotation, point_mutation);
+criterion_main!(selection, rgep, crossover, rotation, point_mutation);

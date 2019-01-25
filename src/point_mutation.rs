@@ -68,6 +68,7 @@ fn test_point_mutation_flips_bits() {
         pop_size: num_inds,
         ind_size: num_words,
         num_gens: 100,
+        elitism: 0,
     };
 
     let context = Context {

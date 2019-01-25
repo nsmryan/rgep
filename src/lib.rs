@@ -26,13 +26,34 @@ pub use selection::*;
 pub mod evaluation;
 pub use evaluation::*;
 
+#[test]
+fn test_swap_with_boxes() {
+    let mut first: Box<Vec<usize>> = Box::new((0..10).collect());
+    let mut second = Box::new((0..10).collect());
+    let mut tmp = Box::new(Vec::new());
+
+    first[0] = 1234;
+
+    tmp = first;
+    first = second;
+    second = tmp;
+    assert!(first[0] == 0);
+    assert!(second[0] == 1234);
+
+    tmp = first;
+    first = second;
+    second = tmp;
+    assert!(first[0] == 1234);
+    assert!(second[0] == 0);
+}
 
 pub fn rgep<R: Rng, A: Clone, B: Clone>(params: &Params,
                           context: &Context<A, B>,
                           state: &B,
                           eval_ind: &EvalFunction<A, B, R>,
                           rng: &mut R) -> Pop {
-    let mut pop = Pop::create(&params, &context, rng);
+    let mut pop = Box::new(Pop::create(&params, &context, rng));
+    let mut alt_pop = Box::new(Pop::create_fast(&params, &context));
 
     let bits_per_sym = context.bits_per_sym();
 
@@ -42,10 +63,13 @@ pub fn rgep<R: Rng, A: Clone, B: Clone>(params: &Params,
         crossover_one_point(&mut pop, params.ind_size, bits_per_sym, params.prob_one_point_crossover, rng);
         crossover_two_point(&mut pop, params.ind_size, bits_per_sym, params.prob_two_point_crossover, rng);
         let fitnesses = rgep_evaluate(&pop, context, state, eval_ind, rng);
-        pop = stochastic_universal_sampling(&pop, fitnesses, rng);
+        stochastic_universal_sampling(&pop, &mut alt_pop, fitnesses, params.elitism, rng);
+
+        // swap which is the primary population and which is the alternate
+        std::mem::swap(&mut pop, &mut alt_pop);
     }
 
-    pop
+    *pop
 }
 
 
@@ -53,12 +77,13 @@ pub fn ga<R: Rng>(params: &GaParams,
                   eval: &Fn(&Ind, &mut R) -> f64,
                   rng: &mut R) -> Pop {
     let mut pop = Pop::create_ga(&params, rng);
+    let mut alt_pop = Pop::create_ga_fast(&params);
 
     for _ in 0..params.num_gens {
         point_mutation(&mut pop, 8, params.prob_pm, rng);
         crossover_one_point(&mut pop, params.ind_size, 8, params.prob_pc1, rng);
         let fitnesses = ga_evaluate(&pop, eval.clone(), rng);
-        pop = stochastic_universal_sampling(&pop, fitnesses, rng);
+        stochastic_universal_sampling(&pop, &mut alt_pop, fitnesses, params.elitism, rng);
     }
 
     pop

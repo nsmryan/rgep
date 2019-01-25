@@ -76,25 +76,20 @@ fn main() {
                    &variables,
                    eval_prog,
                    &mut rng);
+
+    let mut fitnesses = Vec::new();
     for ind in pop.0.iter() {
         let fitness = eval_prog(&ind.compile(&context), &mut variables, &mut rng);
+        fitnesses.push(fitness);
         println!("{} -> {}", ind.to_string(&context), fitness);
     }
 
-    let (index, fitness) = 
-        pop.0.iter()
-             .cloned()
-             .map(|ind| eval_prog(&ind.compile(&context), &mut variables, &mut rng))
-             .enumerate()
-             .fold((0, 0.0), |(best_index, best_fitness), (index, fitness)| {
-                if fitness > best_fitness {
-                    (index, fitness)
-                } else {
-                    (best_index, best_fitness)
-                }
-            });
+    let index_fittest = fittest(&fitnesses);
+    let fittest = pop.0[index_fittest].clone();
+    let fitness = fitnesses[index_fittest];
+
     println!("best fitness    = {}", fitness);
-    println!("best individual = {:?}", pop.0[index].to_string(&context));
-    println!("infix = {:?}", pop.0[index].eval(&context, &mut variables).simplify().to_string_infix());
+    println!("best individual = {:?}", pop.0[index_fittest].to_string(&context));
+    println!("infix = {:?}", pop.0[index_fittest].eval(&context, &mut variables).simplify().to_string_infix());
 }
 

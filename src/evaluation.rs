@@ -3,11 +3,25 @@ use rand::prelude::*;
 use types::*;
 
 
+pub fn fittest(fitnesses: &Vec<f64>) -> usize {
+    let (index, fitness) = 
+        fitnesses.iter()
+                  .enumerate()
+                  .fold((0, 0.0), |(best_index, best_fitness), (index, fitness)| {
+                     if *fitness > best_fitness {
+                         (index, *fitness)
+                     } else {
+                         (best_index, best_fitness)
+                     }
+                   });
+    index
+}
+
 pub fn rgep_evaluate<R, A, B>(pop: &Pop,
-                         context: &Context<A, B>,
-                         state: &B,
-                         eval_prog: &EvalFunction<A, B, R>,
-                         rng: &mut R) -> Vec<f64>
+                              context: &Context<A, B>,
+                              state: &B,
+                              eval_prog: &EvalFunction<A, B, R>,
+                              rng: &mut R) -> Vec<f64>
     where R: Rng,
           A: Clone,
           B: Clone {

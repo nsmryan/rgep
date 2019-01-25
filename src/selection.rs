@@ -90,6 +90,7 @@ pub fn select_stochastic_universal(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec<
     assert!(total_fitness != 0.0, "Cannot sample when all fitness values are 0.0!");
 
     let increment = total_fitness / fitnesses.len() as f64;
+    assert!(increment.is_normal(), format!("Selection cannot work with {} increment!", increment));
     let offset = increment * offset_scaler;
 
     let mut offset = offset;

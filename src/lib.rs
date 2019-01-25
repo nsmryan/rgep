@@ -65,7 +65,6 @@ pub fn rgep<R: Rng, A: Clone, B: Clone>(params: &Params,
         let fitnesses = rgep_evaluate(&pop, context, state, eval_ind, rng);
         stochastic_universal_sampling(&pop, &mut alt_pop, fitnesses, params.elitism, rng);
 
-        // swap which is the primary population and which is the alternate
         std::mem::swap(&mut pop, &mut alt_pop);
     }
 

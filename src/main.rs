@@ -32,8 +32,8 @@ fn main() {
         prob_two_point_crossover: 0.6,
         prob_rotation: 0.001,
         pop_size: 100,
-        ind_size: 100,
-        num_gens: 500,
+        ind_size: 1000,
+        num_gens: 100,
         elitism: 1,
     };
 

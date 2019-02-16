@@ -11,30 +11,33 @@ use rand::prelude::*;
 use rgep::*;
 
 
+fn popcount(word: u32) -> u32 {
+    let bit_sum = 0;
+    let mut bits = word;
+
+    for _ in 0..32 {
+        bit_sum += (bits & 1);
+        bits = bits >> 1;
+    }
+
+    bit_sum
+}
+
 fn main() {
     let terminals =
         vec!(zero_sym(),
              one_sym(),
              two_sym());
-             
 
     let functions =
         vec!(plus_sym(),
              mult_sym(),
              sub_sym(),
-             //div_sym(),
+             mod_sym(),
 
              dup_sym(),
              swap_sym(),
              drop_sym(),
-
-             printout(),
-             //load_mem(),
-             //store_mem(),
-             store_a(),
-             load_a(),
-             //store_b(),
-             //load_b(),
              );
 
     let params: Params = Params {
@@ -51,10 +54,8 @@ fn main() {
     let context = Context {
         terminals: terminals,
         functions: functions,
-        default: 0.0,
+        default: 0,
     };
-
-    let mut instr_state = Default::default();
 
     println!("bits = {}", context.bits_per_sym());
     println!("bytes = {}", context.bytes_per_sym());
@@ -62,52 +63,35 @@ fn main() {
     let mut rng = thread_rng();
 
     let default = context.default.clone();
-    let eval_prog: &EvalFunction<f64, InstrState, ThreadRng> =
-        &move |prog: &Program<f64, InstrState>, state: &mut InstrState, _r: &mut ThreadRng| -> f64 {
+    let eval_prog: &EvalFunction<u32, (), ThreadRng> =
+        &move |prog: &Program<u32, ()>, state: &mut (), _r: &mut ThreadRng| -> f64 {
             let mut penalty = 0.0;
 
-            prog.eval(state, default.clone());
-            let amount_error: f64 =
-                state.output.iter()
-                            .zip(vec!(0.0, 1.0, 2.0, 3.0, 4.0))
-                            .map(|(a, b)| (a - b).abs())
-                            .sum();
-
-            penalty += 5.0 * (5.0 - state.output.len() as f64).abs();
-
-            penalty += amount_error;
-
-            if penalty == 0.0 {
-                penalty = 0.0001;
+            for _ in 0..100 {
+                let word: u32 = rng.gen();
+                let mut stack = Vec::new();
+                stack.push(word);
+                let result = prog.eval_with_stack(&mut (), default.clone(), &mut stack);
+                penalty += (popcount(word) - result).abS();
             }
 
-            1.0 / penalty
+            1.0 / (penalty as f64)
         };
 
     let pop = rgep(&params,
                    &context,
-                   &instr_state,
+                   &(),
                    eval_prog,
                    &mut rng);
 
-    let mut fitnesses = Vec::new();
-    let mut local_states = Vec::new();
-    for ind in pop.0.iter() {
-        let mut local_state = instr_state.clone();
-        let fitness = eval_prog(&ind.compile(&context), &mut local_state, &mut rng);
-        fitnesses.push(fitness);
-        println!("local_state = {:?}", local_state);
-        local_states.push(local_state);
-        println!("{} -> {}", ind.to_string(&context), fitness);
-    }
 
-    let index_fittest = fittest(&fitnesses);
-    let fittest = pop.0[index_fittest].clone();
-    let fitness = fitnesses[index_fittest];
+    //let index_fittest = fittest(&fitnesses);
+    //let fittest = pop.0[index_fittest].clone();
+    //let fitness = fitnesses[index_fittest];
 
-    println!("best fitness    = {}", fitness);
-    println!("best individual = {:?}", pop.0[index_fittest].to_string(&context));
-    println!("best output = {:?}", local_states[index_fittest]);
+    //println!("best fitness    = {}", fitness);
+    //println!("best individual = {:?}", pop.0[index_fittest].to_string(&context));
+    //println!("best output = {:?}", local_states[index_fittest]);
 }
 
 fn main_expr() {

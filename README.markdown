@@ -16,4 +16,4 @@ of Point Mutation that could be used in other Genetic Algorithm code.
 
 
 
-Enjoy!
+This software is licensed under MIT and Apache 2, whichever you prefer.

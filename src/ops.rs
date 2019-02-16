@@ -1,5 +1,7 @@
 use std::rc::Rc;
 use std::boxed::Box;
+use std::ops::Add;
+use std::fmt::Display;
 
 use types::*;
 
@@ -322,6 +324,15 @@ pub fn make_binary<A, B>(name: &str, f: Rc<Fn(A, A) -> A>) -> Sym<A, B>
     Sym::new(name.to_string(), Arity::new(2, 1), f)
 }
 
+pub fn make_unary<A, B>(name: &str, f: Rc<Fn(A) -> A>) -> Sym<A, B>
+    where A: 'static + ToString + Copy, B: 'static {
+    let f: Rc<Fn(&mut Vec<A>, &mut B)> = Rc::new(move |stack, _context| {
+        let arg = stack.pop().unwrap();
+        stack.push(f(arg));
+    });
+    Sym::new(name.to_string(), Arity::new(1, 1), f)
+}
+
 pub fn zero_sym<B:'static>() -> Sym<f64, B> {
     make_const(0.0)
 }
@@ -334,7 +345,7 @@ pub fn two_sym<B:'static>() ->  Sym<f64, B> {
     make_const(2.0)
 }
 
-pub fn plus_sym<B:'static>() -> Sym<f64, B> {
+pub fn plus_sym<A: Add + Display, B:'static>() -> Sym<Add<Output=A>, B> {
     make_binary("+", Rc::new(|a, b| a + b))
 }
 
@@ -346,6 +357,10 @@ pub fn mult_sym<B:'static>() -> Sym<f64, B> {
     make_binary("*", Rc::new(|a, b| a * b))
 }
 
+pub fn mod_sym<B:'static>() -> Sym<f64, B> {
+    make_binary("%", Rc::new(|a, b| a % b))
+}
+
 pub fn div_sym<B:'static>() -> Sym<f64, B> {
     make_binary("/", Rc::new(|a, b| {
         if b == 0.0 {
@@ -354,6 +369,22 @@ pub fn div_sym<B:'static>() -> Sym<f64, B> {
             a / b
         }
     }))
+}
+
+pub fn and_sym<B:'static>() -> Sym<u32, B> {
+    make_binary("&", Rc::new(|a, b| a & b))
+}
+
+pub fn or_sym<B:'static>() -> Sym<u32, B> {
+    make_binary("|", Rc::new(|a, b| a | b))
+}
+
+pub fn xor_sym<B:'static>() -> Sym<u32, B> {
+    make_binary("x", Rc::new(|a, b| a ^ b))
+}
+
+pub fn not_sym<B:'static>() -> Sym<u32, B> {
+    make_unary("-", Rc::new(|a| !a))
 }
 
 pub fn dup_sym<A: 'static + Clone, B: 'static>() -> Sym<A, B> {

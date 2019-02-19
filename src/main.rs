@@ -12,7 +12,7 @@ use rgep::*;
 
 
 fn popcount(word: u32) -> u32 {
-    let bit_sum = 0;
+    let mut bit_sum = 0;
     let mut bits = word;
 
     for _ in 0..32 {
@@ -24,6 +24,7 @@ fn popcount(word: u32) -> u32 {
 }
 
 fn main() {
+    /*
     let terminals =
         vec!(zero_sym(),
              one_sym(),
@@ -54,14 +55,16 @@ fn main() {
     let context = Context {
         terminals: terminals,
         functions: functions,
-        default: 0,
+        default: 0.0,
     };
 
     println!("bits = {}", context.bits_per_sym());
     println!("bytes = {}", context.bytes_per_sym());
     
     let mut rng = thread_rng();
+    */
 
+    /*
     let default = context.default.clone();
     let eval_prog: &EvalFunction<u32, (), ThreadRng> =
         &move |prog: &Program<u32, ()>, state: &mut (), _r: &mut ThreadRng| -> f64 {
@@ -72,7 +75,7 @@ fn main() {
                 let mut stack = Vec::new();
                 stack.push(word);
                 let result = prog.eval_with_stack(&mut (), default.clone(), &mut stack);
-                penalty += (popcount(word) - result).abS();
+                penalty += (popcount(word) - result).abs();
             }
 
             1.0 / (penalty as f64)
@@ -83,7 +86,7 @@ fn main() {
                    &(),
                    eval_prog,
                    &mut rng);
-
+                   */
 
     //let index_fittest = fittest(&fitnesses);
     //let fittest = pop.0[index_fittest].clone();

@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use std::boxed::Box;
-use std::ops::Add;
+use std::ops::{Add, Sub, Mul, Div, Rem};
+use std::num::FromPrimitive;
 use std::fmt::Display;
 
 use types::*;
@@ -345,25 +346,30 @@ pub fn two_sym<B:'static>() ->  Sym<f64, B> {
     make_const(2.0)
 }
 
-pub fn plus_sym<A: Add + Display, B:'static>() -> Sym<Add<Output=A>, B> {
+pub fn plus_sym<A, B>() -> Sym<A, B> 
+    where A: Add<Output=A> + Display + Copy + 'static, B:'static {
     make_binary("+", Rc::new(|a, b| a + b))
 }
 
-pub fn sub_sym<B:'static>() -> Sym<f64, B> {
+pub fn sub_sym<A, B>() -> Sym<A, B>
+    where A: Sub<Output=A> + Display + Copy + 'static, B:'static {
     make_binary("-", Rc::new(|a, b| a - b))
 }
 
-pub fn mult_sym<B:'static>() -> Sym<f64, B> {
+pub fn mult_sym<A, B>() -> Sym<A, B>
+    where A: Mul<Output=A> + Display + Copy + 'static, B:'static {
     make_binary("*", Rc::new(|a, b| a * b))
 }
 
-pub fn mod_sym<B:'static>() -> Sym<f64, B> {
+pub fn mod_sym<A, B>() -> Sym<A, B>
+    where A: Rem<Output=A> + Display + Copy + 'static, B:'static {
     make_binary("%", Rc::new(|a, b| a % b))
 }
 
-pub fn div_sym<B:'static>() -> Sym<f64, B> {
+pub fn div_sym<A, B>() -> Sym<A, B>
+    where A: Div<Output=A> + Zero + Display + Copy + 'static, B:'static {
     make_binary("/", Rc::new(|a, b| {
-        if b == 0.0 {
+        if b == A::zero() {
             0.0
         } else {
             a / b

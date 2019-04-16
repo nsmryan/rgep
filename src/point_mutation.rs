@@ -2,6 +2,8 @@ use rand::prelude::*;
 
 use statrs::distribution::{Uniform, Geometric};
 
+use im::vector::Vector;
+
 use types::*;
 use ops::*;
 
@@ -44,6 +46,25 @@ pub fn point_mutate<R: Rng>(ind: &mut Ind, bits_used: usize, pm: f64, rng: &mut 
         let word = ind.0[next_loc];
 
         ind.0[next_loc] = word ^ (1 << bit_index);
+
+        next_loc_bits += sampler.sample(rng) as usize;
+    }
+}
+
+pub fn point_mutate_im<R: Rng>(ind: &mut Vector<u8>, bits_used: usize, pm: f64, rng: &mut R) {
+    let ind_len_bits = ind.len() * bits_used;
+
+    let sampler = Geometric::new(pm).unwrap();
+
+    let mut next_loc_bits = sampler.sample(rng) as usize;
+    
+    while next_loc_bits < ind_len_bits {
+        let next_loc = next_loc_bits / bits_used;
+        let bit_index = next_loc_bits % bits_used;
+
+        let word = ind.get_mut(next_loc).unwrap();
+
+        *word = *word ^ (1 << bit_index);
 
         next_loc_bits += sampler.sample(rng) as usize;
     }

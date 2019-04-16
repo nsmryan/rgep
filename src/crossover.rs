@@ -3,6 +3,8 @@ use rand::distributions::Distribution;
 
 use statrs::distribution::Uniform;
 
+use im::vector::Vector;
+
 use types::*;
 
 
@@ -67,6 +69,31 @@ pub fn crossover_two_point<R: Rng>(pop: &mut Pop, words_per_ind: usize, bits_per
             cross_at_points(&mut pair, bits_per_sym, &locs);
         }
     }
+}
+
+pub fn cross_at_points_im(pair: (Vector<u8>, Vector<u8>), bits_per_sym: usize, cross_points: &[usize]) -> (Vector<u8>, Vector<u8>) {
+    let (mut left, mut right) = (Vector::new(), Vector::new());
+
+    let (mut first, mut second) = pair;
+
+    let mut running_sum = 0;
+
+    for cross_point in cross_points {
+        //println!("point = {}, len = {}, sum = {}", cross_point, first.len(), running_sum);
+
+        let (head_first, tail_first) = first.split_at(*cross_point - running_sum);
+        let (head_second, tail_second) = second.split_at(*cross_point - running_sum);
+
+        running_sum += cross_point - 1;
+
+        first = tail_first;
+        second = tail_second;
+
+        left.append(head_first);
+        right.append(head_second);
+    }
+
+    (left, right)
 }
 
 // Generic multipoint crossover. This version skips indices that will not be effected,

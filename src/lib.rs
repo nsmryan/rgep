@@ -1,5 +1,7 @@
 extern crate rand;
 extern crate statrs;
+extern crate im;
+extern crate num;
 #[cfg(test)] extern crate float_cmp;
 
 

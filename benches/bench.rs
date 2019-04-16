@@ -15,7 +15,7 @@ use rgep::*;
 
 fn bench_crossover(c: &mut Criterion) {
     c.bench_function("naive crossover", |b| b.iter(|| {
-        let n = 10000;
+        let n = 1000000;
         let ind1 = Ind(iter::repeat(0x0).take(n).collect());
         let ind2 = Ind(iter::repeat(0xF).take(n).collect());
 
@@ -27,7 +27,7 @@ fn bench_crossover(c: &mut Criterion) {
     }));
 
     c.bench_function("crossover", |b| b.iter(|| {
-        let n = 10000;
+        let n = 1000000;
         let ind1 = Ind(iter::repeat(0x0).take(n).collect());
         let ind2 = Ind(iter::repeat(0xF).take(n).collect());
 
@@ -36,6 +36,18 @@ fn bench_crossover(c: &mut Criterion) {
         let cross_points = [1, n / 4, n / 2, 3 * (n / 4)];
 
         cross_at_points(pair, 4, &cross_points);
+    }));
+
+    c.bench_function("crossover_im", |b| b.iter(|| {
+        let n = 1000000;
+        let ind1 = iter::repeat(0x0).take(n).collect();
+        let ind2 = iter::repeat(0xF).take(n).collect();
+
+        let pair = (ind1, ind2);
+
+        let cross_points = [1, n / 4, n / 2, 3 * (n / 4)];
+
+        let result_pair = cross_at_points_im(pair, 4, &cross_points);
     }));
 }
 
@@ -95,7 +107,55 @@ fn bench_rotation_types(c: &mut Criterion) {
 }
 
 fn bench_point_mutation(c: &mut Criterion) {
-    c.bench_function("naive_point_mutation", |b| b.iter(|| {
+    c.bench_function("naive_point_mutation_100", |b| b.iter(|| {
+        let n = 100;
+        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
+        let pm = 0.01;
+        let mut rng = thread_rng();
+        point_mutate_naive(&mut ind, 4, pm, &mut rng);
+    }));
+
+    c.bench_function("point_mutation_100", |b| b.iter(|| {
+        let n = 100;
+        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
+        let pm = 0.01;
+        let mut rng = thread_rng();
+        point_mutate(&mut ind, 4, pm, &mut rng);
+    }));
+
+    c.bench_function("point_mutation_im_100", |b| b.iter(|| {
+        let n = 100;
+        let mut ind = iter::repeat(0x0).take(n).collect();
+        let pm = 0.01;
+        let mut rng = thread_rng();
+        point_mutate_im(&mut ind, 4, pm, &mut rng);
+    }));
+
+    c.bench_function("naive_point_mutation_1000", |b| b.iter(|| {
+        let n = 1000;
+        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
+        let pm = 0.01;
+        let mut rng = thread_rng();
+        point_mutate_naive(&mut ind, 4, pm, &mut rng);
+    }));
+
+    c.bench_function("point_mutation_1000", |b| b.iter(|| {
+        let n = 1000;
+        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
+        let pm = 0.01;
+        let mut rng = thread_rng();
+        point_mutate(&mut ind, 4, pm, &mut rng);
+    }));
+
+    c.bench_function("point_mutation_im_1000", |b| b.iter(|| {
+        let n = 1000;
+        let mut ind = iter::repeat(0x0).take(n).collect();
+        let pm = 0.01;
+        let mut rng = thread_rng();
+        point_mutate_im(&mut ind, 4, pm, &mut rng);
+    }));
+
+    c.bench_function("naive_point_mutation_10000", |b| b.iter(|| {
         let n = 10000;
         let mut ind = Ind(iter::repeat(0x0).take(n).collect());
         let pm = 0.01;
@@ -103,12 +163,39 @@ fn bench_point_mutation(c: &mut Criterion) {
         point_mutate_naive(&mut ind, 4, pm, &mut rng);
     }));
 
-    c.bench_function("point_mutation", |b| b.iter(|| {
+    c.bench_function("point_mutation_10000", |b| b.iter(|| {
         let n = 10000;
         let mut ind = Ind(iter::repeat(0x0).take(n).collect());
         let pm = 0.01;
         let mut rng = thread_rng();
         point_mutate(&mut ind, 4, pm, &mut rng);
+    }));
+
+    c.bench_function("point_mutation_im_10000", |b| b.iter(|| {
+        let n = 10000;
+        let mut ind = iter::repeat(0x0).take(n).collect();
+        let pm = 0.01;
+        let mut rng = thread_rng();
+        point_mutate_im(&mut ind, 4, pm, &mut rng);
+    }));
+}
+
+fn bench_point_mutation_traversal(c: &mut Criterion) {
+    c.bench_function("point_mutation_twice", |b| b.iter(|| {
+        let n = 100;
+        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
+        let pm = 0.01;
+        let mut rng = thread_rng();
+        point_mutate_naive(&mut ind, 4, pm, &mut rng);
+        point_mutate_naive(&mut ind, 4, pm, &mut rng);
+    }));
+
+    c.bench_function("point_mutation_likely", |b| b.iter(|| {
+        let n = 100;
+        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
+        let pm = 0.02;
+        let mut rng = thread_rng();
+        point_mutate_naive(&mut ind, 4, pm, &mut rng);
     }));
 }
 
@@ -133,25 +220,6 @@ fn bench_point_mutation_geometric(c: &mut Criterion) {
         let n = 10000;
         let mut ind = Ind(iter::repeat(0x0).take(n).collect());
         let pm = 0.001;
-        let mut rng = thread_rng();
-        point_mutate(&mut ind, 4, pm, &mut rng);
-    }));
-}
-
-fn bench_point_mutation_twice(c: &mut Criterion) {
-    c.bench_function("point_mutation_0.01", |b| b.iter(|| {
-        let n = 10000;
-        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
-        let pm = 0.1;
-        let mut rng = thread_rng();
-        point_mutate(&mut ind, 4, pm, &mut rng);
-        point_mutate(&mut ind, 4, pm, &mut rng);
-    }));
-
-    c.bench_function("point_mutation_0.02", |b| b.iter(|| {
-        let n = 10000;
-        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
-        let pm = 0.1;
         let mut rng = thread_rng();
         point_mutate(&mut ind, 4, pm, &mut rng);
     }));
@@ -235,7 +303,7 @@ fn bench_selection(c: &mut Criterion) {
     }));
 }
 
-criterion_group!(point_mutation, bench_point_mutation, bench_point_mutation_geometric, bench_point_mutation_twice);
+criterion_group!(point_mutation, bench_point_mutation, bench_point_mutation_geometric, bench_point_mutation_traversal);
 criterion_group!(crossover, bench_crossover);
 criterion_group!(rotation, bench_rotation_offsets, bench_rotation_sizes, bench_rotation_types);
 criterion_group!(rgep, bench_rgep_operators);

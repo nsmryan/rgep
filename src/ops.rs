@@ -1,8 +1,10 @@
 use std::rc::Rc;
 use std::boxed::Box;
-use std::ops::{Add, Sub, Mul, Div, Rem, Zero};
-use std::num::FromPrimitive;
+use std::ops::{Add, Sub, Mul, Div, Rem};
 use std::fmt::Display;
+
+use num::FromPrimitive;
+use num::Zero;
 
 use types::*;
 
@@ -367,10 +369,11 @@ pub fn mod_sym<A, B>() -> Sym<A, B>
 }
 
 pub fn div_sym<A, B>() -> Sym<A, B>
-    where A: Div<Output=A> + Zero + Display + Copy + 'static, B:'static {
+    where A: Div<Output=A> + Display + Copy + Zero + PartialEq + 'static,
+          B: 'static {
     make_binary("/", Rc::new(|a, b| {
         if b == A::zero() {
-            0.0
+            A::zero()
         } else {
             a / b
         }

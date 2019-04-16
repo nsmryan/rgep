@@ -180,6 +180,25 @@ fn bench_point_mutation(c: &mut Criterion) {
     }));
 }
 
+fn bench_point_mutation_traversal(c: &mut Criterion) {
+    c.bench_function("point_mutation_twice", |b| b.iter(|| {
+        let n = 100;
+        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
+        let pm = 0.01;
+        let mut rng = thread_rng();
+        point_mutate_naive(&mut ind, 4, pm, &mut rng);
+        point_mutate_naive(&mut ind, 4, pm, &mut rng);
+    }));
+
+    c.bench_function("point_mutation_likely", |b| b.iter(|| {
+        let n = 100;
+        let mut ind = Ind(iter::repeat(0x0).take(n).collect());
+        let pm = 0.02;
+        let mut rng = thread_rng();
+        point_mutate_naive(&mut ind, 4, pm, &mut rng);
+    }));
+}
+
 fn bench_point_mutation_geometric(c: &mut Criterion) {
     c.bench_function("point_mutation_0.1", |b| b.iter(|| {
         let n = 10000;
@@ -284,7 +303,7 @@ fn bench_selection(c: &mut Criterion) {
     }));
 }
 
-criterion_group!(point_mutation, bench_point_mutation, bench_point_mutation_geometric);
+criterion_group!(point_mutation, bench_point_mutation, bench_point_mutation_geometric, bench_point_mutation_traversal);
 criterion_group!(crossover, bench_crossover);
 criterion_group!(rotation, bench_rotation_offsets, bench_rotation_sizes, bench_rotation_types);
 criterion_group!(rgep, bench_rgep_operators);

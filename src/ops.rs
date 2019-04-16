@@ -1,6 +1,6 @@
 use std::rc::Rc;
 use std::boxed::Box;
-use std::ops::{Add, Sub, Mul, Div, Rem};
+use std::ops::{Add, Sub, Mul, Div, Rem, Zero};
 use std::num::FromPrimitive;
 use std::fmt::Display;
 

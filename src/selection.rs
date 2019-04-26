@@ -1,4 +1,7 @@
 use std::cmp::Ordering;
+use std::iter;
+
+use num::traits::Pow;
 
 use rand::prelude::*;
 
@@ -19,9 +22,7 @@ pub fn k_elite(fitnesses: &Vec<f64>, num_elite: usize) -> Vec<usize> {
                 Ordering::Less
             } else if fitness > fitness_other {
                 Ordering::Greater
-            } else {
-                Ordering::Equal
-            }
+            } else { Ordering::Equal }
         });
         // add the k most elite individual's indices to the elite_indices vec
         elite_indices.extend(elite_paired.iter().take(num_elite).map(|(index, _)| index));
@@ -33,39 +34,39 @@ pub fn k_elite(fitnesses: &Vec<f64>, num_elite: usize) -> Vec<usize> {
 pub fn tournament_selection<R: Rng>(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec<f64>, prob: f64, tourn_size: usize, elitism: usize, rng: &mut R) {
     let winner_rng = Uniform::new(0.0, 1.0).unwrap();
 
-    let tourny = Vec::new();
-
     let num_inds = pop.0.len();
 
     let mut elite_indices = k_elite(&fitnesses, elitism);
 
-    let num_selections = 0;
+    let mut num_selections = 0;
 
-    let prob_indices = (0..tourn_size).map(|index| prob * (1.0 - prob).pow(tourn_size)).collect::Vec<usize>();
+    let prob_indices = (0..tourn_size).map(|index| prob * (1.0 - prob).pow(tourn_size as i32)).collect::<Vec<f64>>();
 
     while num_selections < num_inds {
-        tourny.push(iter::repeat_with(|| {
-            let index = rng.gen_range(0, 
+        // NOTE consider re-using this vector. benchmark for comparison
+        let mut tourny = iter::repeat_with(|| {
+            let index = rng.gen_range(0, pop.0[0].0.len());
             let ind = &pop.0[index];
             let fitness = fitnesses[index];
             (ind, fitness)
-        });
+        }).collect::<Vec<(&Ind, f64)>>();
 
-        tourny.sort_unstable_by(|a b| a.1.partial_cmp(b.1).unwrap());
+        tourny.sort_unstable_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
         let pos_rng = rng.sample(winner_rng);
 
-        let winner_index = prob_indices.iter().position(|p| pos_rng <= p);
+        let winner_index = prob_indices.iter().position(|p| pos_rng <= *p).unwrap();
 
-        if let elite_index = elite_indices.iter().position(|a| a == winner_index) {
-            elite_indices.remove_swap(elite_index);
+        if let Some(elite_index) = elite_indices.iter().position(|a| *a == winner_index) {
+            elite_indices.swap_remove(elite_index);
         }
+
+        num_selections += 1;
     }
 
     for elite_index in elite_indices {
-        new_pop.0[elite_index].clear();
-        new_pop.0[elite_index].extend(pop.0[num_selections]);
-        num_selections += 1;
+        new_pop.0[elite_index].0.clear();
+        new_pop.0[elite_index].0.extend(pop.0[num_selections].0.iter());
     }
 }
 

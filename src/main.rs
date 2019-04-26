@@ -11,6 +11,7 @@ use rand::prelude::*;
 use rgep::*;
 
 
+/*
 fn popcount(word: u32) -> u32 {
     let bit_sum = 0;
     let mut bits = word;
@@ -22,8 +23,10 @@ fn popcount(word: u32) -> u32 {
 
     bit_sum
 }
+*/
 
 fn main() {
+    /*
     let terminals =
         vec!(zero_sym(),
              one_sym(),
@@ -92,6 +95,7 @@ fn main() {
     //println!("best fitness    = {}", fitness);
     //println!("best individual = {:?}", pop.0[index_fittest].to_string(&context));
     //println!("best output = {:?}", local_states[index_fittest]);
+    */
 }
 
 fn main_expr() {

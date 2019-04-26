@@ -345,7 +345,7 @@ pub fn two_sym<B:'static>() ->  Sym<f64, B> {
     make_const(2.0)
 }
 
-pub fn plus_sym<A: Add + Display, B:'static>() -> Sym<Add<Output=A>, B> {
+pub fn plus_sym<B:'static>() -> Sym<f64, B> {
     make_binary("+", Rc::new(|a, b| a + b))
 }
 

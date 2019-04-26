@@ -30,6 +30,45 @@ pub fn k_elite(fitnesses: &Vec<f64>, num_elite: usize) -> Vec<usize> {
     elite_indices
 }
 
+pub fn tournament_selection<R: Rng>(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec<f64>, prob: f64, tourn_size: usize, elitism: usize, rng: &mut R) {
+    let winner_rng = Uniform::new(0.0, 1.0).unwrap();
+
+    let tourny = Vec::new();
+
+    let num_inds = pop.0.len();
+
+    let mut elite_indices = k_elite(&fitnesses, elitism);
+
+    let num_selections = 0;
+
+    let prob_indices = (0..tourn_size).map(|index| prob * (1.0 - prob).pow(tourn_size)).collect::Vec<usize>();
+
+    while num_selections < num_inds {
+        tourny.push(iter::repeat_with(|| {
+            let index = rng.gen_range(0, 
+            let ind = &pop.0[index];
+            let fitness = fitnesses[index];
+            (ind, fitness)
+        });
+
+        tourny.sort_unstable_by(|a b| a.1.partial_cmp(b.1).unwrap());
+
+        let pos_rng = rng.sample(winner_rng);
+
+        let winner_index = prob_indices.iter().position(|p| pos_rng <= p);
+
+        if let elite_index = elite_indices.iter().position(|a| a == winner_index) {
+            elite_indices.remove_swap(elite_index);
+        }
+    }
+
+    for elite_index in elite_indices {
+        new_pop.0[elite_index].clear();
+        new_pop.0[elite_index].extend(pop.0[num_selections]);
+        num_selections += 1;
+    }
+}
+
 pub fn stochastic_universal_sampling<R: Rng>(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec<f64>, elitism: usize, rng: &mut R) {
     let offset_scaler = Uniform::new(0.0, 1.0).unwrap().sample(rng);
 

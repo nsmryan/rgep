@@ -332,6 +332,7 @@ dependencies = [
  "criterion 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "float-cmp 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rayon 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "statrs 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

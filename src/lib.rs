@@ -49,11 +49,12 @@ fn test_swap_with_boxes() {
     assert!(second[0] == 0);
 }
 
-pub fn rgep<R: Rng, A: Clone, B: Clone>(params: &Params,
-                          context: &Context<A, B>,
-                          state: &B,
-                          eval_ind: &EvalFunction<A, B, R>,
-                          rng: &mut R) -> Pop {
+pub fn rgep<R, A, B>(params: &Params,
+                     context: &Context<A, B>,
+                     state: &B,
+                     eval_ind: &EvalFunction<A, B, R>,
+                     rng: &mut R) -> Pop 
+    where R: Rng, A: Clone, B: Clone {
     let mut pop = Box::new(Pop::create(&params, &context, rng));
     let mut alt_pop = Box::new(Pop::create_fast(&params, &context));
 

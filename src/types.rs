@@ -15,7 +15,7 @@ use ops::*;
 
 pub type EvalFunction<A, B, R> = Fn(&Program<A, B>, &mut B, &mut R) -> f64;
 
-pub type Variables = HashMap<String, f64>;
+pub type Variables<A> = HashMap<String, A>;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Ind(pub Vec<u8>);

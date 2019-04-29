@@ -10,17 +10,20 @@ use types::*;
 
 
 #[derive(Clone, PartialEq)]
-pub enum Arith {
-    Add(Box<Arith>, Box<Arith>),
-    Sub(Box<Arith>, Box<Arith>),
-    Mult(Box<Arith>, Box<Arith>),
-    Div(Box<Arith>, Box<Arith>),
-    Const(f64),
+pub enum Arith<A> {
+    Add(Box<Arith<A>>, Box<Arith<A>>),
+    Sub(Box<Arith<A>>, Box<Arith<A>>),
+    Mult(Box<Arith<A>>, Box<Arith<A>>),
+    Div(Box<Arith<A>>, Box<Arith<A>>),
+    Const(A),
     Var(String),
 }
 
-impl Arith {
-    pub fn eval(&self, context: &Variables) -> f64 {
+impl<A> Arith<A> 
+    where A: ToString + Copy + PartialEq + FromPrimitive +
+             Div<Output=A> + Mul<Output=A> + Add<Output=A> +
+             Sub<Output=A> + 'static {
+    pub fn eval(&self, context: &Variables<A>) -> A {
         match self {
             Arith::Add(exp1, exp2) => {
                 exp1.eval(context) + exp2.eval(context)
@@ -36,8 +39,8 @@ impl Arith {
 
             Arith::Div(exp1, exp2) => {
                 let denom = exp2.eval(context);
-                if denom == 0.0 {
-                    0.0
+                if denom == A::from_f64(0.0).unwrap() {
+                    A::from_f64(0.0).unwrap()
                 } else {
                     exp1.eval(context) / denom
                 }
@@ -73,14 +76,14 @@ impl Arith {
         }
     }
 
-    pub fn is_constant(&self, test_contant: f64) -> bool {
+    pub fn is_constant(&self, test_contant: A) -> bool {
         match self {
             Arith::Const(constant) => *constant == test_contant,
             _ => false,
         }
     }
 
-    pub fn simplify(&self) -> Arith {
+    pub fn simplify(&self) -> Arith<A> {
         match self.clone() {
             Arith::Add(exp1, exp2) => {
                 let exp1 = exp1.simplify();
@@ -91,9 +94,9 @@ impl Arith {
                         (Arith::Const(c1), Arith::Const(c2)) => Arith::Const(c1 + c2),
                         _ => panic!("Simplify sum should not have reached this code!"),
                     }
-                } else if exp1.is_constant(0.0) {
+                } else if exp1.is_constant(A::from_f64(0.0).unwrap()) {
                     exp2
-                } else if exp2.is_constant(0.0) {
+                } else if exp2.is_constant(A::from_f64(0.0).unwrap()) {
                     exp1
                 } else if exp2.is_const() {
                     Arith::Add(Box::new(exp2), Box::new(exp1))
@@ -125,11 +128,11 @@ impl Arith {
                         (Arith::Const(c1), Arith::Const(c2)) => Arith::Const(c1 * c2),
                         _ => panic!("Simplify mult should not have reached this code!"),
                     }
-                } else if exp1.is_constant(0.0) || exp2.is_constant(0.0) {
-                    Arith::Const(0.0)
-                } else if exp1.is_constant(1.0) {
+                } else if exp1.is_constant(A::from_f64(0.0).unwrap()) || exp2.is_constant(A::from_f64(0.0).unwrap()) {
+                    Arith::Const(A::from_f64(0.0).unwrap())
+                } else if exp1.is_constant(A::from_f64(1.0).unwrap()) {
                     exp2
-                } else if exp2.is_constant(1.0) {
+                } else if exp2.is_constant(A::from_f64(1.0).unwrap()) {
                     exp1
                 } else if exp2.is_const() {
                     Arith::Mult(Box::new(exp2), Box::new(exp1.simplify()))
@@ -142,8 +145,8 @@ impl Arith {
                 let exp1 = exp1.simplify();
                 let exp2 = exp2.simplify();
 
-                if exp2.is_constant(0.0) {
-                    Arith::Const(1.0 / 0.0)
+                if exp2.is_constant(A::from_f64(0.0).unwrap()) {
+                    Arith::Const(A::from_f64(0.0).unwrap())
                 } else if exp1.is_const() && exp2.is_const() {
                     match (exp1, exp2) {
                         (Arith::Const(c1), Arith::Const(c2)) => Arith::Const(c1 / c2),
@@ -213,9 +216,9 @@ impl Arith {
     }
 }
 
-pub fn add_expr() -> Sym<Arith, Variables> {
-    let f: Rc<Fn(&mut Vec<Arith>, &mut Variables)> =
-        Rc::new(move |stack: &mut Vec<Arith>, _map: &mut Variables| {
+pub fn add_expr<A>() -> Sym<Arith<A>, Variables<A>> {
+    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+        Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
             stack.push(Arith::Add(Box::new(arg1), Box::new(arg2)));
@@ -223,9 +226,9 @@ pub fn add_expr() -> Sym<Arith, Variables> {
     Sym { name: "+".to_string(), arity: Arity::new(2, 1), fun: f }
 }
 
-pub fn sub_expr() -> Sym<Arith, Variables> {
-    let f: Rc<Fn(&mut Vec<Arith>, &mut Variables)> =
-        Rc::new(move |stack: &mut Vec<Arith>, _map: &mut Variables| {
+pub fn sub_expr<A>() -> Sym<Arith<A>, Variables<A>> {
+    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+        Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
             stack.push(Arith::Sub(Box::new(arg1), Box::new(arg2)));
@@ -233,9 +236,9 @@ pub fn sub_expr() -> Sym<Arith, Variables> {
     Sym { name: "-".to_string(), arity: Arity::new(2, 1), fun: f }
 }
 
-pub fn div_expr() -> Sym<Arith, Variables> {
-    let f: Rc<Fn(&mut Vec<Arith>, &mut Variables)> =
-        Rc::new(move |stack: &mut Vec<Arith>, _map: &mut Variables| {
+pub fn div_expr<A>() -> Sym<Arith<A>, Variables<A>> {
+    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+        Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
             stack.push(Arith::Div(Box::new(arg1), Box::new(arg2)));
@@ -243,9 +246,9 @@ pub fn div_expr() -> Sym<Arith, Variables> {
     Sym { name: "/".to_string(), arity: Arity::new(2, 1), fun: f }
 }
 
-pub fn mult_expr() -> Sym<Arith, Variables> {
-    let f: Rc<Fn(&mut Vec<Arith>, &mut Variables)> =
-        Rc::new(move |stack: &mut Vec<Arith>, _map: &mut Variables| {
+pub fn mult_expr<A>() -> Sym<Arith<A>, Variables<A>> {
+    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+        Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
             stack.push(Arith::Mult(Box::new(arg1), Box::new(arg2)));
@@ -253,21 +256,25 @@ pub fn mult_expr() -> Sym<Arith, Variables> {
     Sym { name: "*".to_string(), arity: Arity::new(2, 1), fun: f }
 }
 
-pub fn const_expr(constant: f64) -> Sym<Arith, Variables> {
-    let f: Rc<Fn(&mut Vec<Arith>, &mut Variables)> =
-        Rc::new(move |stack: &mut Vec<Arith>, _map: &mut Variables| {
+pub fn const_expr<A: ToString + Copy + 'static>(constant: A) -> Sym<Arith<A>, Variables<A>> {
+    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+        Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             stack.push(Arith::Const(constant));
     });
     Sym { name: constant.to_string(), arity: Arity::new(0, 1), fun: f }
 }
 
-pub fn var_expr(name: String) -> Sym<Arith, Variables> {
+pub fn var_expr<A>(name: String) -> Sym<Arith<A>, Variables<A>> {
     let sym_name = name.clone();
-    let f: Rc<Fn(&mut Vec<Arith>, &mut Variables)> =
-        Rc::new(move |stack: &mut Vec<Arith>, _map: &mut Variables| {
+    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+        Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             stack.push(Arith::Var(name.clone()));
     });
     Sym { name: sym_name, arity: Arity::new(0, 1), fun: f }
+}
+
+pub fn push_context<A: Copy>(stack: &mut Vec<A>, b: &mut A) {
+    stack.push(*b);
 }
 
 pub fn dup<A: Clone, B>(stack: &mut Vec<A>, _b: &mut B) {
@@ -336,16 +343,16 @@ pub fn make_unary<A, B>(name: &str, f: Rc<Fn(A) -> A>) -> Sym<A, B>
     Sym::new(name.to_string(), Arity::new(1, 1), f)
 }
 
-pub fn zero_sym<B:'static>() -> Sym<f64, B> {
-    make_const(0.0)
+pub fn zero_sym<A: Copy + ToString + FromPrimitive + 'static, B:'static>() -> Sym<A, B> {
+    make_const(FromPrimitive::from_u32(0).unwrap())
 }
 
-pub fn one_sym<B:'static>() ->  Sym<f64, B> {
-    make_const(1.0)
+pub fn one_sym<A: Copy + ToString + FromPrimitive + 'static, B:'static>() ->  Sym<A, B> {
+    make_const(FromPrimitive::from_u32(1).unwrap())
 }
 
-pub fn two_sym<B:'static>() ->  Sym<f64, B> {
-    make_const(2.0)
+pub fn two_sym<A: Copy + ToString + FromPrimitive + 'static, B:'static>() ->  Sym<A, B> {
+    make_const(FromPrimitive::from_u32(2).unwrap())
 }
 
 pub fn plus_sym<A, B>() -> Sym<A, B> 
@@ -364,8 +371,8 @@ pub fn mult_sym<A, B>() -> Sym<A, B>
 }
 
 pub fn mod_sym<A, B>() -> Sym<A, B>
-    where A: Rem<Output=A> + Display + Copy + 'static, B:'static {
-    make_binary("%", Rc::new(|a, b| a % b))
+    where A: Rem<Output=A> + PartialEq + Display + Zero + Copy + 'static, B:'static {
+    make_binary("%", Rc::new(|a, b| if b != A::zero() { a % b } else { A::zero() } ))
 }
 
 pub fn div_sym<A, B>() -> Sym<A, B>
@@ -400,6 +407,10 @@ pub fn dup_sym<A: 'static + Clone, B: 'static>() -> Sym<A, B> {
     Sym::new("dup".to_string(), Arity::new(1, 2), Rc::new(dup))
 }
 
+pub fn push_context_sym<A: Copy + 'static>() -> Sym<A, A> {
+    Sym::new("x".to_string(), Arity::new(0, 2), Rc::new(push_context))
+}
+
 pub fn swap_sym<A: 'static, B: 'static>() -> Sym<A, B> {
     Sym::new("swap".to_string(), Arity::new(2, 2), Rc::new(swap))
 }
@@ -416,10 +427,10 @@ pub fn tuck_sym<A: 'static + Clone, B: 'static>() -> Sym<A, B> {
     Sym::new("tuck".to_string(), Arity::new(2, 3), Rc::new(tuck))
 }
 
-pub fn symbol_sym(sym: String) -> Sym<f64, Variables> {
+pub fn symbol_sym<A: Copy>(sym: String) -> Sym<A, Variables<A>> {
     let name = sym.clone();
-    let f: Rc<Fn(&mut Vec<f64>, &mut Variables)> =
-        Rc::new(move |stack: &mut Vec<f64>, map: &mut Variables| {
+    let f: Rc<Fn(&mut Vec<A>, &mut Variables<A>)> =
+        Rc::new(move |stack: &mut Vec<A>, map: &mut Variables<A>| {
             stack.push(*map.get(&name).unwrap());
     });
     Sym { name: sym, arity: Arity::new(0, 1), fun: f }

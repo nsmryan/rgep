@@ -23,7 +23,8 @@ pub fn rotation<R: Rng>(pop: &mut Pop, pr: f64, rng: &mut R) {
     }
 }
 
-pub fn rotate_naive(ind: &mut Ind<u8>, rotation_point: usize) {
+pub fn rotate_naive<T>(ind: &mut Ind<T>, rotation_point: usize) 
+    where T: Copy {
     let ind_len = ind.0.len();
 
     let mut index = 0;
@@ -53,7 +54,8 @@ fn test_rotate() {
     assert!(ind == expected, format!("{:?} != {:?}", ind, expected));
 }
 
-pub fn rotate_copy(ind: &mut Ind<u8>, scratch: &mut Vec<u8>, rotation_point: usize) {
+pub fn rotate_copy<T>(ind: &mut Ind<T>, scratch: &mut Vec<T>, rotation_point: usize) 
+    where T: Copy {
     let ind_len = ind.0.len();
 
     scratch.clear();

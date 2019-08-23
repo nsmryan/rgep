@@ -1,4 +1,8 @@
+use std::ops::{Shl, BitXor};
+
 use rand::prelude::*;
+
+use num::{One, one, Zero, zero};
 
 use statrs::distribution::{Uniform, Geometric};
 
@@ -20,13 +24,14 @@ pub fn point_mutation_naive<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rn
     }
 }
 
-pub fn point_mutate_naive<R: Rng>(ind: &mut Ind<u8>, bits_used: usize, pm: f64, rng: &mut R) {
+pub fn point_mutate_naive<T, R: Rng>(ind: &mut Ind<T>, bits_used: usize, pm: f64, rng: &mut R) 
+    where R: Rng, T: Shl<Output=T> + BitXor<Output=T> + One + Zero {
     let sampler = Uniform::new(0.0, 1.0).unwrap();
 
     for loc in ind.0.iter_mut() {
-        for bit_index in 0..bits_used {
+        for bit_index in zero::<T>()..bits_used {
             if sampler.sample(rng) < pm {
-                *loc = *loc ^ (1 << bit_index);
+                *loc = *loc ^ (num::one::<T>() << bit_index);
             }
         }
     }

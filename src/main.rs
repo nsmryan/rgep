@@ -111,9 +111,9 @@ fn main_popcount() {
 
     let mut fitnesses = Vec::new();
     for ind in pop.0.iter() {
-        let fitness = eval_prog(&ind.compile(&context), &mut 0, &mut rng);
+        let fitness = eval_prog(&context.compile(&ind), &mut 0, &mut rng);
         fitnesses.push(fitness);
-        println!("{} -> {}", ind.to_string(&context), fitness);
+        println!("{} -> {}", context.to_string(&ind), fitness);
     }
 
     let index_fittest = fittest(&fitnesses);
@@ -121,13 +121,13 @@ fn main_popcount() {
     let fitness = fitnesses[index_fittest];
 
     println!("best fitness    = {}", fitness);
-    println!("best individual = {:?}", pop.0[index_fittest].to_string(&context));
+    println!("best individual = {:?}", context.to_string(&pop.0[index_fittest]));
 
     let words = vec!(0xA5A5, 0x1234, 0x1010, 0x0001);
     for mut word in words {
         let mut stack = vec!(word);
         let mut prog = Program(Vec::with_capacity(pop.0[0].0.len()));
-        pop.0[index_fittest].compile_to(&context, &mut prog);
+        context.compile_to(&pop.0[index_fittest], &mut prog);
         let result = prog.eval_with_stack(&mut word, default.clone() as u32, &mut stack);
         println!("Expected {}, was {}", popcount(word), result);
     }
@@ -201,9 +201,9 @@ fn main_expr() {
 
     let mut fitnesses = Vec::new();
     for ind in pop.0.iter() {
-        let fitness = eval_prog(&ind.compile(&context), &mut variables, &mut rng);
+        let fitness = eval_prog(&context.compile(&ind), &mut variables, &mut rng);
         fitnesses.push(fitness);
-        println!("{} -> {}", ind.to_string(&context), fitness);
+        println!("{} -> {}", context.to_string(&ind), fitness);
     }
 
     let index_fittest = fittest(&fitnesses);
@@ -211,7 +211,7 @@ fn main_expr() {
     let fitness = fitnesses[index_fittest];
 
     println!("best fitness    = {}", fitness);
-    println!("best individual = {:?}", pop.0[index_fittest].to_string(&context));
-    println!("infix = {:?}", pop.0[index_fittest].eval(&context, &mut variables).simplify().to_string_infix());
+    println!("best individual = {:?}", context.to_string(&pop.0[index_fittest]));
+    println!("infix = {:?}", context.eval(&pop.0[index_fittest], &mut variables).simplify().to_string_infix());
 }
 

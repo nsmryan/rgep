@@ -19,92 +19,6 @@ use crate::rotation::*;
 use crate::selection::*;
 
 
-impl Ind<u8> {
-    pub fn to_string<A: Clone, B: Clone>(&self, context: &Context<A, B>) -> String {
-        let mut string = "".to_string();
-
-        for code in self.0.iter() {
-            let sym = context.decode(*code);
-            string.push_str(&sym.name);
-            string.push_str(&"");
-        }
-
-        string
-    }
-    
-    pub fn eval<A: Clone, B: Clone>(&self, context: &Context<A, B>, b: &mut B) -> A {
-        self.eval_with_stack(context, &Vec::new(), b)
-    }
-
-    pub fn eval_with_stack<A: Clone, B: Clone>(&self, context: &Context<A, B>, stack: &Vec<A>, b: &mut B) -> A {
-        let mut local_stack = stack.clone();
-        self.exec_with_stack(context, &mut local_stack, b);
-        match local_stack.pop() {
-            Some(result) => result,
-            None => context.default.clone(),
-        }
-    }
-
-    pub fn exec<A: Clone, B: Clone>(&self, context: &Context<A, B>, b: &mut B) -> Vec<A> {
-        let mut stack = Vec::new();
-        self.exec_with_stack(context, &mut stack, b);
-        stack
-    }
-
-    pub fn exec_with_stack<A: Clone, B: Clone>(&self, context: &Context<A, B>, stack: &mut Vec<A>, b: &mut B) {
-        for code in self.0.iter() {
-            let sym = context.decode(*code);
-            if stack.len() >= sym.arity.num_in {
-                (sym.fun)(stack, b);
-            }
-        }
-    }
-
-    pub fn compile<A: Clone, B: Clone>(&self, context: &Context<A, B>) -> Program<A, B> {
-        let mut program = Program(Vec::with_capacity(self.0.len()));
-
-        self.compile_to(context, &mut program);
-
-        program
-    }
-
-    pub fn compile_to<'a, A: Clone, B: Clone>(&self,
-                                              context: &Context<A, B>,
-                                              prog: &mut Program<A, B>) {
-        prog.0.clear();
-        for code in self.0.iter() {
-            let sym = context.decode(*code);
-            prog.0.push(sym.clone());
-        }
-    }
-}
-
-#[test]
-fn test_eval_simple_equation() {
-    let terminals =
-        vec!(zero_sym(), one_sym(), two_sym());
-
-    let functions = vec!(plus_sym());
-
-    let context: Context<f64, ()> = Context {
-        terminals: terminals,
-        functions: functions,
-        default: 0.0,
-    };
-
-    let mut ind_vec = Vec::new();
-    ind_vec.push(2); // one
-    ind_vec.push(4); // two
-    ind_vec.push(1); // plus
-    let ind = Ind(ind_vec);
-    let result = ind.eval(&context, &mut ());
-    assert!(result.approx_eq(&3.0, 2.0 * ::std::f64::EPSILON, 2), format!("result was {}", result))
-}
-
-pub type EvalFunction<A, B, R> = Fn(&Program<A, B>, &mut B, &mut R) -> f64;
-
-pub type Variables<A> = HashMap<String, A>;
-
 pub struct Context<A: Clone + 'static, B: Clone + 'static> {
     pub terminals: Vec<Sym<A, B>>,
     pub functions: Vec<Sym<A, B>>,
@@ -138,6 +52,90 @@ impl<A: Clone, B: Clone + 'static> Context<A, B> {
         }
     }
 }
+
+impl<A: Clone, B: Clone + 'static> Context<A, B> {
+    pub fn to_string(&self, ind: &Ind<u8>) -> String {
+        let mut string = "".to_string();
+
+        for code in ind.0.iter() {
+            let sym = self.decode(*code);
+            string.push_str(&sym.name);
+            string.push_str(&"");
+        }
+
+        string
+    }
+    
+    pub fn eval(&self, ind: &Ind<u8>, b: &mut B) -> A {
+        self.eval_with_stack(ind, &Vec::new(), b)
+    }
+
+    pub fn eval_with_stack(&self, ind: &Ind<u8>, stack: &Vec<A>, b: &mut B) -> A {
+        let mut local_stack = stack.clone();
+        self.exec_with_stack(ind, &mut local_stack, b);
+        match local_stack.pop() {
+            Some(result) => result,
+            None => self.default.clone(),
+        }
+    }
+
+    pub fn exec(&self, ind: &Ind<u8>, b: &mut B) -> Vec<A> {
+        let mut stack = Vec::new();
+        self.exec_with_stack(ind, &mut stack, b);
+        stack
+    }
+
+    pub fn exec_with_stack(&self, ind: &Ind<u8>, stack: &mut Vec<A>, b: &mut B) {
+        for code in ind.0.iter() {
+            let sym = self.decode(*code);
+            if stack.len() >= sym.arity.num_in {
+                (sym.fun)(stack, b);
+            }
+        }
+    }
+
+    pub fn compile(&self, ind: &Ind<u8>) -> Program<A, B> {
+        let mut program = Program(Vec::with_capacity(ind.0.len()));
+
+        self.compile_to(ind, &mut program);
+
+        program
+    }
+
+    pub fn compile_to(&self, ind: &Ind<u8>, prog: &mut Program<A, B>) {
+        prog.0.clear();
+        for code in ind.0.iter() {
+            let sym = self.decode(*code);
+            prog.0.push(sym.clone());
+        }
+    }
+}
+
+#[test]
+fn test_eval_simple_equation() {
+    let terminals =
+        vec!(zero_sym(), one_sym(), two_sym());
+
+    let functions = vec!(plus_sym());
+
+    let context: Context<f64, ()> = Context {
+        terminals: terminals,
+        functions: functions,
+        default: 0.0,
+    };
+
+    let mut ind_vec = Vec::new();
+    ind_vec.push(2); // one
+    ind_vec.push(4); // two
+    ind_vec.push(1); // plus
+    let ind = Ind(ind_vec);
+    let result = context.eval(&ind, &mut ());
+    assert!(result.approx_eq(&3.0, 2.0 * ::std::f64::EPSILON, 2), format!("result was {}", result))
+}
+
+pub type EvalFunction<A, B, R> = Fn(&Program<A, B>, &mut B, &mut R) -> f64;
+
+pub type Variables<A> = HashMap<String, A>;
 
 pub struct Program<A, B>(pub Vec<Sym<A, B>>);
 
@@ -393,7 +391,7 @@ pub fn rgep_evaluate<R, A, B>(pop: &Pop,
 
     for ind in pop.0.iter() {
         let mut local_state = state.clone();
-        ind.compile_to(context, &mut prog);
+        context.compile_to(&ind, &mut prog);
         let fitness = eval_prog(&prog, &mut local_state, rng);
         fitnesses.push(fitness);
     }

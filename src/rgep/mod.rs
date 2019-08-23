@@ -11,6 +11,10 @@ use crate::selection::*;
 use crate::evaluation::*;
 
 
+pub type EvalFunction<A, B, R> = Fn(&Program<A, B>, &mut B, &mut R) -> f64;
+
+pub type Variables<A> = HashMap<String, A>;
+
 #[derive(Clone)]
 pub struct RgepParams {
     pub prob_mut: f64,

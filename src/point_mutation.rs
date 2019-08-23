@@ -7,7 +7,6 @@ use im::vector::Vector;
 use types::*;
 use ops::*;
 
-
 #[cfg(test)]
 use crate::rgep::*;
 
@@ -21,7 +20,7 @@ pub fn point_mutation_naive<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rn
     }
 }
 
-pub fn point_mutate_naive<R: Rng>(ind: &mut Ind, bits_used: usize, pm: f64, rng: &mut R) {
+pub fn point_mutate_naive<R: Rng>(ind: &mut Ind<u8>, bits_used: usize, pm: f64, rng: &mut R) {
     let sampler = Uniform::new(0.0, 1.0).unwrap();
 
     for loc in ind.0.iter_mut() {
@@ -39,7 +38,7 @@ pub fn point_mutation<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rng: &mu
     }
 }
 
-pub fn point_mutate<R: Rng>(ind: &mut Ind, bits_used: usize, pm: f64, rng: &mut R) {
+pub fn point_mutate<R: Rng>(ind: &mut Ind<u8>, bits_used: usize, pm: f64, rng: &mut R) {
     let ind_len_bits = ind.0.len() * bits_used;
 
     let sampler = Geometric::new(pm).unwrap();

@@ -49,7 +49,7 @@ pub fn tournament_selection<R: Rng>(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec
             let ind = &pop.0[index];
             let fitness = fitnesses[index];
             (ind, fitness)
-        }).collect::<Vec<(&Ind, f64)>>();
+        }).collect::<Vec<(&Ind<u8>, f64)>>();
 
         tourny.sort_unstable_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 

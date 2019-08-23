@@ -25,7 +25,7 @@ pub fn crossover_one_point<R: Rng>(pop: &mut Pop, words_per_ind: usize, bits_per
     }
 }
 
-pub fn cross_at_point(pair: &mut [Ind], bits_per_sym: usize, cross_point: usize) {
+pub fn cross_at_point(pair: &mut [Ind<u8>], bits_per_sym: usize, cross_point: usize) {
     let cross_word_index = cross_point / bits_per_sym;
     for word_index in 0..cross_word_index {
         let tmp = pair[0].0[word_index];
@@ -98,7 +98,7 @@ pub fn cross_at_points_im(pair: (Vector<u8>, Vector<u8>), bits_per_sym: usize, c
 
 // Generic multipoint crossover. This version skips indices that will not be effected,
 // making it somewhat more complex then necessary.
-pub fn cross_at_points(pair: &mut [Ind], bits_per_sym: usize, cross_points: &[usize]) {
+pub fn cross_at_points(pair: &mut [Ind<u8>], bits_per_sym: usize, cross_points: &[usize]) {
     let ind_len = pair[0].0.len();
 
     let mut bounded_cross_points = Vec::new();
@@ -187,7 +187,7 @@ fn test_cross_word() {
     assert!(second == 0x0F, format!("was {:b}, expected {:b}", second, 0x0F));
 }
 
-pub fn cross_at_points_naive(pair: &mut [Ind], bits_per_sym: usize, cross_points: &[usize]) {
+pub fn cross_at_points_naive(pair: &mut [Ind<u8>], bits_per_sym: usize, cross_points: &[usize]) {
     let ind_len = pair[0].0.len();
 
     let mut cross_point_index = 0;

@@ -8,8 +8,6 @@ use std::iter::*;
 
 #[cfg(test)] use float_cmp::*;
 
-use rand::prelude::*;
-
 use ops::*;
 
 
@@ -150,54 +148,6 @@ impl<A, B> Program<A, B> {
 #[derive(Debug)]
 pub struct Pop(pub Vec<Ind>);
 
-impl Pop {
-    pub fn create<A, R, B>(params: &Params, context: &Context<A, B>, rng: &mut R) -> Pop 
-    where R: Rng, A: Clone, B: Clone {
-        let mut pop = Vec::with_capacity(params.pop_size);
-
-        let bits_needed = context.bits_per_sym();
-        assert!(bits_needed <= 8, "This implementation does not currently support multiple byte symbols");
-
-        let range = 2_u32.pow(bits_needed as u32);
-
-        for _ in 0..params.pop_size {
-            let mut ind_vec = Vec::with_capacity(params.ind_size);
-            for _ in 0..params.ind_size {
-                ind_vec.push(rng.gen_range(0, range) as u8);
-            }
-            pop.push(Ind(ind_vec));
-        }
-
-        Pop(pop)
-    }
-
-    pub fn create_fast<A, B>(params: &Params, context: &Context<A, B>) -> Pop 
-    where A: Clone, B: Clone {
-        let ind = Ind(iter::repeat(0x0).take(params.ind_size).collect());
-        Pop(iter::repeat(ind).take(params.pop_size).collect())
-    }
-
-    pub fn create_ga<R>(params: &GaParams, rng: &mut R) -> Pop 
-    where R: Rng {
-        let mut pop = Vec::with_capacity(params.pop_size);
-        for _ in 0..params.pop_size {
-            let mut ind_vec = Vec::with_capacity(params.ind_size);
-            for _ in 0..params.ind_size {
-                ind_vec.push(rng.gen_range(0, 0xFF) as u8);
-            }
-            pop.push(Ind(ind_vec));
-        }
-
-        Pop(pop)
-    }
-
-    pub fn create_ga_fast(params: &GaParams) -> Pop {
-        let ind = Ind(std::iter::repeat(0x0).take(params.ind_size).collect());
-        Pop(iter::repeat(ind).take(params.pop_size).collect())
-    }
-}
-
-
 #[derive(Clone, PartialEq, Eq, Debug, Copy)]
 pub struct Arity {
     pub num_in:  usize,
@@ -302,65 +252,6 @@ impl<A: Clone, B: Clone + 'static> Context<A, B> {
         }
     }
 }
-
-
-#[derive(Clone)]
-pub struct Params {
-    pub prob_mut: f64,
-    pub prob_one_point_crossover: f64,
-    pub prob_two_point_crossover: f64,
-    pub prob_rotation: f64,
-
-    pub pop_size: usize,
-    pub ind_size: usize,
-
-    pub elitism: usize,
-
-    pub num_gens: usize,
-}
-
-impl Default for Params {
-    fn default() -> Self {
-        Params {
-            prob_mut: 0.001,
-            prob_one_point_crossover: 0.6,
-            prob_two_point_crossover: 0.6,
-            prob_rotation: 0.01,
-            pop_size: 25,
-            ind_size: 100,
-            elitism: 1,
-            num_gens: 100,
-        }
-    }
-}
-
-
-#[derive(Clone, PartialEq)]
-pub struct GaParams {
-    pub ind_size: usize,
-    pub pop_size: usize,
-
-    pub num_gens: usize,
-
-    pub elitism: usize,
-
-    pub prob_pm: f64,
-    pub prob_pc1: f64,
-}
-
-impl Default for GaParams {
-    fn default() -> GaParams {
-        GaParams {
-            ind_size: 100,
-            pop_size: 100,
-            num_gens: 1000,
-            elitism: 0,
-            prob_pm: 0.01,
-            prob_pc1: 0.6,
-        }
-    }
-}
-
 
 #[derive(Clone)]
 pub enum Node<A, B> {

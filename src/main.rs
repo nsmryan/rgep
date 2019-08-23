@@ -58,7 +58,7 @@ fn main_popcount() {
              drop_sym(),
              );
 
-    let params: Params = Params {
+    let params: RgepParams = RgepParams {
         prob_mut: 0.005,
         prob_one_point_crossover: 0.6,
         prob_two_point_crossover: 0.6,
@@ -148,7 +148,7 @@ fn main_expr() {
              drop_sym(),
              );
 
-    let params: Params = Params {
+    let params: RgepParams = RgepParams {
         prob_mut: 0.005,
         prob_one_point_crossover: 0.6,
         prob_two_point_crossover: 0.6,

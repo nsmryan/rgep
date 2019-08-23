@@ -8,6 +8,13 @@ use types::*;
 use ops::*;
 
 
+#[cfg(test)]
+use crate::rgep::*;
+
+#[cfg(test)]
+use crate::ga::*;
+
+
 pub fn point_mutation_naive<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rng: &mut R) {
     for ind in pop.0.iter_mut() {
         point_mutate_naive(ind, bits_used, pm, rng);
@@ -81,7 +88,7 @@ fn test_point_mutation_flips_bits() {
     let num_inds  = 200;
     let num_words = 200;
 
-    let params: Params = Params {
+    let params: RgepParams = RgepParams {
         prob_mut: 0.001,
         prob_one_point_crossover: 0.6,
         prob_two_point_crossover: 0.6,
@@ -100,7 +107,7 @@ fn test_point_mutation_flips_bits() {
 
     let mut rng = thread_rng();
 
-    let mut pop = Pop::create(&params, &context, &mut rng);
+    let mut pop = create_rgep(&params, &context, &mut rng);
     let bits_per_sym = context.bits_per_sym();
     point_mutation(&mut pop, bits_per_sym, params.prob_mut, &mut rng);
 

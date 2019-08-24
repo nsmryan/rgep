@@ -43,7 +43,9 @@ pub fn point_mutation<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rng: &mu
     }
 }
 
-pub fn point_mutate<R: Rng>(ind: &mut Ind<u8>, bits_used: usize, pm: f64, rng: &mut R) {
+pub fn point_mutate<T, R>(ind: &mut Ind<T>, bits_used: usize, pm: f64, rng: &mut R) 
+    where R: Rng,
+          T: PrimInt {
     let ind_len_bits = ind.0.len() * bits_used;
 
     let sampler = Geometric::new(pm).unwrap();
@@ -56,13 +58,15 @@ pub fn point_mutate<R: Rng>(ind: &mut Ind<u8>, bits_used: usize, pm: f64, rng: &
 
         let word = ind.0[next_loc];
 
-        ind.0[next_loc] = word ^ (1 << bit_index);
+        ind.0[next_loc] = word ^ (T::one() << bit_index);
 
         next_loc_bits += sampler.sample(rng) as usize;
     }
 }
 
-pub fn point_mutate_im<R: Rng>(ind: &mut Vector<u8>, bits_used: usize, pm: f64, rng: &mut R) {
+pub fn point_mutate_im<T, R>(ind: &mut Vector<T>, bits_used: usize, pm: f64, rng: &mut R) 
+    where R: Rng,
+          T: PrimInt {
     let ind_len_bits = ind.len() * bits_used;
 
     let sampler = Geometric::new(pm).unwrap();
@@ -75,7 +79,7 @@ pub fn point_mutate_im<R: Rng>(ind: &mut Vector<u8>, bits_used: usize, pm: f64, 
 
         let word = ind.get_mut(next_loc).unwrap();
 
-        *word = *word ^ (1 << bit_index);
+        *word = *word ^ (T::one() << bit_index);
 
         next_loc_bits += sampler.sample(rng) as usize;
     }

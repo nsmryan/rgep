@@ -3,7 +3,6 @@ extern crate rand;
 extern crate statrs;
 #[cfg(test)] extern crate float_cmp;
 
-
 use std::collections::HashMap;
 
 use rand::prelude::*;
@@ -117,7 +116,7 @@ fn main_popcount() {
     }
 
     let index_fittest = fittest(&fitnesses);
-    let fittest = pop.0[index_fittest].clone();
+    //let fittest = pop.0[index_fittest].clone();
     let fitness = fitnesses[index_fittest];
 
     println!("best fitness    = {}", fitness);
@@ -207,7 +206,7 @@ fn main_expr() {
     }
 
     let index_fittest = fittest(&fitnesses);
-    let fittest = pop.0[index_fittest].clone();
+    //let fittest = pop.0[index_fittest].clone();
     let fitness = fitnesses[index_fittest];
 
     println!("best fitness    = {}", fitness);

@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use rand::prelude::*;
 
 use rgep::*;
+use rgep::context::*;
 
 
 fn popcount(word: u32) -> u32 {

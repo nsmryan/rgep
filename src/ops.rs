@@ -7,6 +7,7 @@ use num::FromPrimitive;
 use num::Zero;
 
 use crate::rgep::*;
+use crate::rgep::context::*;
 
 
 #[derive(Clone, PartialEq)]
@@ -400,7 +401,7 @@ pub fn xor_sym<B:'static>() -> Sym<u32, B> {
 }
 
 pub fn not_sym<B:'static>() -> Sym<u32, B> {
-    make_unary("-", Rc::new(|a| !a))
+    make_unary("-", Rc::new(|a: u32| !a))
 }
 
 pub fn dup_sym<A: 'static + Clone, B: 'static>() -> Sym<A, B> {

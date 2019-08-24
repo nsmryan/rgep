@@ -1,8 +1,6 @@
-use std::ops::{Shl, BitXor};
-
 use rand::prelude::*;
 
-use num::{One, Zero, NumCast, PrimInt};
+use num::{One, PrimInt};
 
 use statrs::distribution::{Uniform, Geometric};
 

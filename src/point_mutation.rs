@@ -1,6 +1,6 @@
 use rand::prelude::*;
 
-use num::{One, PrimInt};
+use num::PrimInt;
 
 use statrs::distribution::{Uniform, Geometric};
 

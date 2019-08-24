@@ -47,7 +47,7 @@ fn bench_crossover(c: &mut Criterion) {
 
         let cross_points = [1, n / 4, n / 2, 3 * (n / 4)];
 
-        let result_pair = cross_at_points_im(pair, 4, &cross_points);
+        let result_pair = cross_at_points_im(pair, &cross_points);
     }));
 }
 

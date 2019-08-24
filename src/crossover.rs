@@ -71,7 +71,7 @@ pub fn crossover_two_point<R: Rng>(pop: &mut Pop, words_per_ind: usize, bits_per
     }
 }
 
-pub fn cross_at_points_im<T>(pair: (Vector<T>, Vector<T>), bits_per_sym: usize, cross_points: &[usize]) -> (Vector<T>, Vector<T>) 
+pub fn cross_at_points_im<T>(pair: (Vector<T>, Vector<T>), cross_points: &[usize]) -> (Vector<T>, Vector<T>) 
     where T: Clone {
     let (mut left, mut right) = (Vector::new(), Vector::new());
 
@@ -80,8 +80,6 @@ pub fn cross_at_points_im<T>(pair: (Vector<T>, Vector<T>), bits_per_sym: usize, 
     let mut running_sum = 0;
 
     for cross_point in cross_points {
-        //println!("point = {}, len = {}, sum = {}", cross_point, first.len(), running_sum);
-
         let (head_first, tail_first) = first.split_at(*cross_point - running_sum);
         let (head_second, tail_second) = second.split_at(*cross_point - running_sum);
 

@@ -7,7 +7,7 @@ use num::FromPrimitive;
 use num::Zero;
 
 use crate::rgep::*;
-use crate::rgep::context::*;
+use crate::rgep::program::*;
 
 
 #[derive(Clone, PartialEq)]

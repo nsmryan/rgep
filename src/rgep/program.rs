@@ -53,6 +53,25 @@ pub struct Sym<A, B> {
     pub fun: Rc<Fn(&mut Vec<A>, &mut B)>,
 }
 
+impl<A: Clone, B: Clone> Clone for Sym<A, B> {
+    fn clone(&self) -> Self {
+        Sym { name: self.name.clone(),
+              arity: self.arity,
+              fun: self.fun.clone(),
+        }
+    }
+}
+
+impl<A, B> Sym<A, B> {
+    pub fn new(name: String, arity: Arity, fun: Rc<Fn(&mut Vec<A>, &mut B)>) -> Sym<A, B> {
+        Sym { name: name,
+              arity: arity,
+              fun: fun,
+        }
+    }
+}
+
+
 pub struct Program<A, B>(pub Vec<Sym<A, B>>);
 
 impl<A, B> Program<A, B> {
@@ -93,25 +112,6 @@ impl<A, B> Program<A, B> {
         }
 
         string
-    }
-}
-
-
-impl<A: Clone, B: Clone> Clone for Sym<A, B> {
-    fn clone(&self) -> Self {
-        Sym { name: self.name.clone(),
-              arity: self.arity,
-              fun: self.fun.clone(),
-        }
-    }
-}
-
-impl<A, B> Sym<A, B> {
-    pub fn new(name: String, arity: Arity, fun: Rc<Fn(&mut Vec<A>, &mut B)>) -> Sym<A, B> {
-        Sym { name: name,
-              arity: arity,
-              fun: fun,
-        }
     }
 }
 

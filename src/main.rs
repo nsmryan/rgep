@@ -80,7 +80,7 @@ fn main_popcount() {
     
     let default = context.default.clone();
     let eval_prog: &EvalFunction<u32, u32, ThreadRng> =
-        &move |prog: &Program<u32, u32>, state: &mut u32, _r: &mut ThreadRng| -> f64 {
+        &move |prog: &Program<u32, u32>, _state: &mut u32, _r: &mut ThreadRng| -> f64 {
             let mut rng = thread_rng();
             let mut penalty: f64 = 1.0;
 

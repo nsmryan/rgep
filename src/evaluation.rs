@@ -4,7 +4,7 @@ use types::*;
 
 
 pub fn fittest(fitnesses: &Vec<f64>) -> usize {
-    let (index, fitness) = 
+    let (index, _fitness) = 
         fitnesses.iter()
                   .enumerate()
                   .fold((0, 0.0), |(best_index, best_fitness), (index, fitness)| {

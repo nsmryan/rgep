@@ -8,8 +8,6 @@ use std::rc::Rc;
 #[cfg(test)]
 use float_cmp::*;
 
-use ops::{zero_sym, one_sym, two_sym, plus_sym};
-
 use rand::prelude::*;
 
 use crate::types::*;
@@ -370,8 +368,7 @@ pub fn create_rgep<A, R, B>(params: &RgepParams, context: &Context<A, B>, rng: &
     Pop(pop)
 }
 
-pub fn create_rgep_fast<A, B>(params: &RgepParams, context: &Context<A, B>) -> Pop 
-    where A: Clone, B: Clone {
+pub fn create_rgep_fast(params: &RgepParams) -> Pop {
     let ind = Ind(iter::repeat(0x0).take(params.ind_size).collect());
     Pop(iter::repeat(ind).take(params.pop_size).collect())
 }
@@ -406,7 +403,7 @@ pub fn rgep<R, A, B>(params: &RgepParams,
                      rng: &mut R) -> Pop 
     where R: Rng, A: Clone, B: Clone {
     let mut pop = Box::new(create_rgep(&params, &context, rng));
-    let mut alt_pop = Box::new(create_rgep_fast(&params, &context));
+    let mut alt_pop = Box::new(create_rgep_fast(&params));
 
     let bits_per_sym = context.bits_per_sym();
 

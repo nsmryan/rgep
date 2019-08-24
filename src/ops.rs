@@ -6,7 +6,6 @@ use std::fmt::Display;
 use num::FromPrimitive;
 use num::Zero;
 
-use types::*;
 use crate::rgep::*;
 
 
@@ -533,7 +532,6 @@ pub fn load_mem() -> Sym<f64, InstrState> {
     let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let addr = stack.pop().unwrap();
-            let arg = stack.pop().unwrap();
             if addr >= 0.0 && (addr as usize) < state.mem.len() {
                 stack.push(state.mem[addr as usize]);
             }

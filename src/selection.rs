@@ -40,7 +40,7 @@ pub fn tournament_selection<R: Rng>(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec
 
     let mut num_selections = 0;
 
-    let prob_indices = (0..tourn_size).map(|index| prob * (1.0 - prob).pow(tourn_size as i32)).collect::<Vec<f64>>();
+    let prob_indices = (0..tourn_size).map(|_index| prob * (1.0 - prob).pow(tourn_size as i32)).collect::<Vec<f64>>();
 
     while num_selections < num_inds {
         // NOTE consider re-using this vector. benchmark for comparison
@@ -124,8 +124,6 @@ pub fn select_stochastic_universal_naive(pop: &Pop, fitnesses: Vec<f64>, elitism
 }
 
 pub fn select_stochastic_universal(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec<f64>, elitism: usize, offset_scaler: f64) {
-    let num_inds = pop.0.len();
-
     let total_fitness = fitnesses.iter().sum::<f64>();
     assert!(total_fitness != 0.0, "Cannot sample when all fitness values are 0.0!");
 

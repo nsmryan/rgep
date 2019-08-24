@@ -47,15 +47,15 @@ fn test_arity_simple_cases() {
     assert!(ar3 + ar1 == Arity::new(7, 2), format!("arity was {:?}", ar1 + ar3));
 }
 
-pub struct Sym<A, B> {
+pub struct Sym<'a, A, B> {
     pub name: String,
     pub arity: Arity,
-    pub fun: Rc<Fn(&mut Vec<A>, &mut B)>,
+    pub fun: &'a Fn(&mut Vec<A>, &mut B),
 }
 
-pub struct Program<A, B>(pub Vec<Sym<A, B>>);
+pub struct Program<'a, A, B>(pub Vec<&'a Sym<'a, A, B>>);
 
-impl<A, B> Program<A, B> {
+impl<'a, A, B> Program<'a, A, B> {
     pub fn eval(&self, state: &mut B, default: A) -> A {
         let mut stack = Vec::new();
         self.eval_with_stack(state, default, &mut stack)
@@ -97,7 +97,7 @@ impl<A, B> Program<A, B> {
 }
 
 
-impl<A: Clone, B: Clone> Clone for Sym<A, B> {
+impl<'a, A: Clone, B: Clone> Clone for Sym<'a, A, B> {
     fn clone(&self) -> Self {
         Sym { name: self.name.clone(),
               arity: self.arity,
@@ -106,8 +106,8 @@ impl<A: Clone, B: Clone> Clone for Sym<A, B> {
     }
 }
 
-impl<A, B> Sym<A, B> {
-    pub fn new(name: String, arity: Arity, fun: Rc<Fn(&mut Vec<A>, &mut B)>) -> Sym<A, B> {
+impl<'a, A, B> Sym<'a, A, B> {
+    pub fn new(name: String, arity: Arity, fun: &'a Fn(&mut Vec<A>, &mut B)) -> Sym<'a, A, B> {
         Sym { name: name,
               arity: arity,
               fun: fun,

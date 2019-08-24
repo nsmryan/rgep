@@ -4,14 +4,14 @@ use crate::rgep::program::*;
 use crate::types::*;
 
 
-pub struct Context<A: Clone + 'static, B: Clone + 'static> {
-    pub terminals: Vec<Sym<A, B>>,
-    pub functions: Vec<Sym<A, B>>,
+pub struct Context<'a, A: Clone + 'static, B: Clone + 'static> {
+    pub terminals: Vec<Sym<'a, A, B>>,
+    pub functions: Vec<Sym<'a, A, B>>,
 
     pub default: A,
 }
 
-impl<A: Clone, B: Clone + 'static> Context<A, B> {
+impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
     pub fn num_symbols(&self) -> usize {
         self.terminals.len() + self.functions.len()
     }
@@ -26,19 +26,19 @@ impl<A: Clone, B: Clone + 'static> Context<A, B> {
     }
 }
 
-impl<A: Clone, B: Clone + 'static> Context<A, B> {
-    pub fn decode(&self, code: u8) -> &Sym<A, B> {
+impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
+    pub fn decode(&self, code: u8) -> &'a Sym<'a, A, B> {
         let is_function = (code & 1) == 1;
         let index = (code >> 1) as usize;
         if is_function {
-            &self.functions[index % self.functions.len()]
+            return &'a self.functions[index % self.functions.len()];
         } else {
-            &self.terminals[index % self.terminals.len()]
+            return &'a self.terminals[index % self.terminals.len()];
         }
     }
 }
 
-impl<A: Clone, B: Clone + 'static> Context<A, B> {
+impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
     pub fn to_string(&self, ind: &Ind<u8>) -> String {
         let mut string = "".to_string();
 
@@ -79,7 +79,7 @@ impl<A: Clone, B: Clone + 'static> Context<A, B> {
         }
     }
 
-    pub fn compile(&self, ind: &Ind<u8>) -> Program<A, B> {
+    pub fn compile(&self, ind: &Ind<u8>) -> Program<'a, A, B> {
         let mut program = Program(Vec::with_capacity(ind.0.len()));
 
         self.compile_to(ind, &mut program);
@@ -87,11 +87,11 @@ impl<A: Clone, B: Clone + 'static> Context<A, B> {
         program
     }
 
-    pub fn compile_to(&self, ind: &Ind<u8>, prog: &mut Program<A, B>) {
+    pub fn compile_to(&self, ind: &Ind<u8>, prog: &mut Program<'a, A, B>) {
         prog.0.clear();
         for code in ind.0.iter() {
             let sym = self.decode(*code);
-            prog.0.push(sym.clone());
+            prog.0.push(sym);
         }
     }
 }

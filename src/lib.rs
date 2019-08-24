@@ -26,6 +26,9 @@ pub use selection::*;
 pub mod evaluation;
 pub use evaluation::*;
 
+pub mod domains;
+pub use domains::*;
+
 pub mod ga;
 pub use ga::*;
 

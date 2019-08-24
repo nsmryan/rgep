@@ -25,13 +25,13 @@ pub type EvalFunction<A, B, R> = Fn(&Program<A, B>, &mut B, &mut R) -> f64;
 pub type Variables<A> = HashMap<String, A>;
 
 #[derive(Clone)]
-pub enum Node<'a, A, B> {
-    Node(Sym<'a, A, B>, Vec<Node<'a, A, B>>),
-    Leaf(Sym<'a, A, B>)
+pub enum Node<A, B> {
+    Node(Sym<A, B>, Vec<Node<A, B>>),
+    Leaf(Sym<A, B>)
 }
 
-impl<'a, A: Clone, B: Clone> Node<'a, A, B> {
-    pub fn linearize(&self) -> Vec<Sym<'a, A, B>> {
+impl<A: Clone, B: Clone> Node<A, B> {
+    pub fn linearize(&self) -> Vec<Sym<A, B>> {
         let mut syms = Vec::new();
 
         self.linearize_helper(&mut syms);
@@ -39,7 +39,7 @@ impl<'a, A: Clone, B: Clone> Node<'a, A, B> {
         syms
     }
 
-    pub fn linearize_helper(&self, syms: &mut Vec<Sym<'a, A, B>>) {
+    pub fn linearize_helper(&self, syms: &mut Vec<Sym<A, B>>) {
         match self {
             Node::Leaf(sym) => {
                 syms.push(sym.clone());

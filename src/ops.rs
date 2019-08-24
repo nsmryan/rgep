@@ -217,9 +217,9 @@ impl<A> Arith<A>
     }
 }
 
-pub fn add_expr<'a, A>() -> Sym<'a, Arith<A>, Variables<A>> {
-    let f: &Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
-        &move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
+pub fn add_expr<A>() -> Sym<Arith<A>, Variables<A>> {
+    let f: Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
+        move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
             stack.push(Arith::Add(Box::new(arg1), Box::new(arg2)));
@@ -227,9 +227,9 @@ pub fn add_expr<'a, A>() -> Sym<'a, Arith<A>, Variables<A>> {
     Sym { name: "+".to_string(), arity: Arity::new(2, 1), fun: f }
 }
 
-pub fn sub_expr<'a, A>() -> Sym<'a, Arith<A>, Variables<A>> {
-    let f: &Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
-        &move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
+pub fn sub_expr<A>() -> Sym<Arith<A>, Variables<A>> {
+    let f: Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
+        move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
             stack.push(Arith::Sub(Box::new(arg1), Box::new(arg2)));
@@ -237,9 +237,9 @@ pub fn sub_expr<'a, A>() -> Sym<'a, Arith<A>, Variables<A>> {
     Sym { name: "-".to_string(), arity: Arity::new(2, 1), fun: f }
 }
 
-pub fn div_expr<'a, A>() -> Sym<'a, Arith<A>, Variables<A>> {
-    let f: &Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
-        &move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
+pub fn div_expr<A>() -> Sym<Arith<A>, Variables<A>> {
+    let f: Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
+        move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
             stack.push(Arith::Div(Box::new(arg1), Box::new(arg2)));
@@ -247,9 +247,9 @@ pub fn div_expr<'a, A>() -> Sym<'a, Arith<A>, Variables<A>> {
     Sym { name: "/".to_string(), arity: Arity::new(2, 1), fun: f }
 }
 
-pub fn mult_expr<'a, A>() -> Sym<'a, Arith<A>, Variables<A>> {
-    let f: &Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
-        &move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
+pub fn mult_expr<A>() -> Sym< Arith<A>, Variables<A>> {
+    let f: Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
+        move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
             stack.push(Arith::Mult(Box::new(arg1), Box::new(arg2)));
@@ -257,18 +257,18 @@ pub fn mult_expr<'a, A>() -> Sym<'a, Arith<A>, Variables<A>> {
     Sym { name: "*".to_string(), arity: Arity::new(2, 1), fun: f }
 }
 
-pub fn const_expr<'a, A: ToString + Copy + 'static>(constant: A) -> Sym<'a, Arith<A>, Variables<A>> {
-    let f: &Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
-        &move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
+pub fn const_expr<A: ToString + Copy + 'static>(constant: A) -> Sym<Arith<A>, Variables<A>> {
+    let f: Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
+        move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             stack.push(Arith::Const(constant));
     };
     Sym { name: constant.to_string(), arity: Arity::new(0, 1), fun: f }
 }
 
-pub fn var_expr<'a, A>(name: String) -> Sym<'a, Arith<A>, Variables<A>> {
+pub fn var_expr<A>(name: String) -> Sym<Arith<A>, Variables<A>> {
     let sym_name = name.clone();
-    let f: &Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
-        &move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
+    let f: Fn(&mut Vec<Arith<A>>, &mut Variables<A>) =
+        move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             stack.push(Arith::Var(name.clone()));
     };
     Sym { name: sym_name, arity: Arity::new(0, 1), fun: f }
@@ -318,8 +318,8 @@ pub fn tuck<A: Clone, B>(stack: &mut Vec<A>, _b: &mut B) {
     stack.push(arg1);
 }
 
-pub fn make_const<'a, A: 'static + ToString + Copy, B: 'static>(constant: A) -> Sym<'a, A, B> {
-    let f: &Fn(&mut Vec<A>, &mut B) = &move |stack, _context| {
+pub fn make_const<'a, A: 'static + ToString + Copy, B: 'static>(constant: A) -> Sym<A, B> {
+    let f: Fn(&mut Vec<A>, &mut B) = move |stack, _context| {
         stack.push(constant);
     };
     Sym { name: constant.to_string(), arity: Arity::new(0, 1), fun: f }
@@ -335,113 +335,113 @@ pub fn make_binary<A, B>(name: &str, f: Rc<Fn(A, A) -> A>) -> Sym<A, B>
     Sym { name: name.to_string(), arity: Arity::new(2, 1), fun: f }
 }
 
-pub fn make_unary<'a, A, B>(name: &str, f: &'a Fn(A) -> A) -> Sym<'a, A, B>
+pub fn make_unary<A, B>(name: &str, f: Fn(A) -> A) -> Sym<A, B>
     where A: 'static + ToString + Copy, B: 'static {
-    let f: &Fn(&mut Vec<A>, &mut B) = &move |stack, _context| {
+    let f: Fn(&mut Vec<A>, &mut B) = move |stack, _context| {
         let arg = stack.pop().unwrap();
         stack.push(f(arg));
     };
     Sym { name: name.to_string(), arity: Arity::new(1, 1), fun: f }
 }
 
-pub fn zero_sym<'a, A: Copy + ToString + FromPrimitive + 'static, B:'static>() -> Sym<'a, A, B> {
+pub fn zero_sym<'a, A: Copy + ToString + FromPrimitive + 'static, B:'static>() -> Sym<A, B> {
     make_const(FromPrimitive::from_u32(0).unwrap())
 }
 
-pub fn one_sym<'a, A: Copy + ToString + FromPrimitive + 'static, B:'static>() ->  Sym<'a, A, B> {
+pub fn one_sym<'a, A: Copy + ToString + FromPrimitive + 'static, B:'static>() ->  Sym<A, B> {
     make_const(FromPrimitive::from_u32(1).unwrap())
 }
 
-pub fn two_sym<'a, A: Copy + ToString + FromPrimitive + 'static, B:'static>() ->  Sym<'a, A, B> {
+pub fn two_sym<A: Copy + ToString + FromPrimitive + 'static, B:'static>() ->  Sym<A, B> {
     make_const(FromPrimitive::from_u32(2).unwrap())
 }
 
-pub fn plus_sym<'a, A, B>() -> Sym<'a, A, B> 
+pub fn plus_sym<A, B>() -> Sym<A, B> 
     where A: Add<Output=A> + Display + Copy + 'static, B:'static {
-    make_binary("+", Rc::new(|a, b| a + b))
+    make_binary("+", |a, b| a + b)
 }
 
-pub fn sub_sym<'a, A, B>() -> Sym<'a, A, B>
+pub fn sub_sym<A, B>() -> Sym<A, B>
     where A: Sub<Output=A> + Display + Copy + 'static, B:'static {
-    make_binary("-", Rc::new(|a, b| a - b))
+    make_binary("-", |a, b| a - b)
 }
 
-pub fn mult_sym<'a, A, B>() -> Sym<'a, A, B>
+pub fn mult_sym<A, B>() -> Sym<A, B>
     where A: Mul<Output=A> + Display + Copy + 'static, B:'static {
-    make_binary("*", Rc::new(|a, b| a * b))
+    make_binary("*", |a, b| a * b)
 }
 
-pub fn mod_sym<'a, A, B>() -> Sym<'a, A, B>
+pub fn mod_sym<A, B>() -> Sym<A, B>
     where A: Rem<Output=A> + PartialEq + Display + Zero + Copy + 'static, B:'static {
-    make_binary("%", Rc::new(|a, b| if b != A::zero() { a % b } else { A::zero() } ))
+    make_binary("%", |a, b| if b != A::zero() { a % b } else { A::zero() } )
 }
 
-pub fn div_sym<'a, A, B>() -> Sym<'a, A, B>
+pub fn div_sym<A, B>() -> Sym<A, B>
     where A: Div<Output=A> + Display + Copy + Zero + PartialEq + 'static,
           B: 'static {
-    make_binary("/", Rc::new(|a, b| {
+    make_binary("/", |a, b| {
         if b == A::zero() {
             A::zero()
         } else {
             a / b
         }
-    }))
+    })
 }
 
-pub fn and_sym<'a, B:'static>() -> Sym<'a, u32, B> {
-    make_binary("&", Rc::new(|a, b| a & b))
+pub fn and_sym<B:'static>() -> Sym<u32, B> {
+    make_binary("&", |a, b| a & b)
 }
 
-pub fn or_sym<'a, B:'static>() -> Sym<'a, u32, B> {
-    make_binary("|", Rc::new(|a, b| a | b))
+pub fn or_sym<B:'static>() -> Sym<u32, B> {
+    make_binary("|", |a, b| a | b)
 }
 
-pub fn xor_sym<'a, B:'static>() -> Sym<'a, u32, B> {
-    make_binary("x", Rc::new(|a, b| a ^ b))
+pub fn xor_sym<B:'static>() -> Sym<u32, B> {
+    make_binary("x", |a, b| a ^ b)
 }
 
-pub fn not_sym<'a, B:'static>() -> Sym<'a, u32, B> {
-    make_unary("-", &|a: u32| !a)
+pub fn not_sym<B:'static>() -> Sym<u32, B> {
+    make_unary("-", |a: u32| !a)
 }
 
-pub fn dup_sym<'a, A: 'static + Clone, B: 'static>() -> Sym<'a, A, B> {
-    Sym { name: "dup".to_string(), arity: Arity::new(1, 2), fun: &dup }
+pub fn dup_sym<A: 'static + Clone, B: 'static>() -> Sym<A, B> {
+    Sym { name: "dup".to_string(), arity: Arity::new(1, 2), fun: dup }
 }
 
-pub fn push_context_sym<'a, A: Copy + 'static>() -> Sym<'a, A, A> {
-    Sym { name: "x".to_string(), arity: Arity::new(0, 2), fun: &push_context }
+pub fn push_context_sym<A: Copy + 'static>() -> Sym<A, A> {
+    Sym { name: "x".to_string(), arity: Arity::new(0, 2), fun: push_context }
 }
 
-pub fn swap_sym<'a, A: 'static, B: 'static>() -> Sym<'a, A, B> {
-    Sym { name: "swap".to_string(), arity: Arity::new(2, 2), fun: &swap }
+pub fn swap_sym<A: 'static, B: 'static>() -> Sym<A, B> {
+    Sym { name: "swap".to_string(), arity: Arity::new(2, 2), fun: swap }
 }
 
-pub fn drop_sym<'a, A: 'static, B: 'static>() -> Sym<'a, A, B> {
-    Sym { name: "drop".to_string(), arity: Arity::new(1, 0), fun: &drop }
+pub fn drop_sym<A: 'static, B: 'static>() -> Sym<A, B> {
+    Sym { name: "drop".to_string(), arity: Arity::new(1, 0), fun: drop }
 }
 
-pub fn nip_sym<'a, A: 'static, B: 'static>() -> Sym<'a, A, B> {
-    Sym { name: "drop".to_string(), arity: Arity::new(2, 1), fun: &nip }
+pub fn nip_sym<A: 'static, B: 'static>() -> Sym<A, B> {
+    Sym { name: "drop".to_string(), arity: Arity::new(2, 1), fun: nip }
 }
 
-pub fn tuck_sym<'a, A: 'static + Clone, B: 'static>() -> Sym<'a, A, B> {
-    Sym { name: "tuck".to_string(), arity: Arity::new(2, 3), fun: &tuck }
+pub fn tuck_sym<A: 'static + Clone, B: 'static>() -> Sym<A, B> {
+    Sym { name: "tuck".to_string(), arity: Arity::new(2, 3), fun: tuck }
 }
 
-pub fn symbol_sym<'a, A: Copy>(sym: String) -> Sym<'a, A, Variables<A>> {
+pub fn symbol_sym<A: Copy>(sym: String) -> Sym<A, Variables<A>> {
     let name = sym.clone();
-    let f: &Fn(&mut Vec<A>, &mut Variables<A>) =
-        &move |stack: &mut Vec<A>, map: &mut Variables<A>| {
+    let f: Fn(&mut Vec<A>, &mut Variables<A>) =
+        move |stack: &mut Vec<A>, map: &mut Variables<A>| {
             stack.push(*map.get(&name).unwrap());
     };
     Sym { name: sym, arity: Arity::new(0, 1), fun: f }
 }
 
-pub fn node<'a, A: 'static + Clone, B: 'static + Clone>(sym: Sym<'a, A, B>) -> Sym<'a, Node<'a, A, B>, B> {
+pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>) -> Sym<Node<A, B>, B> {
     let name = sym.name.clone();
     let num_in = sym.arity.num_in;
-    let f: &Fn(&mut Vec<Node<'a, A, B>>, &mut B) =
-        &move |stack: &mut Vec<Node<'a, A, B>>, _state: &mut B| {
+    let f: Fn(&mut Vec<Node<A, B>>, &mut B) =
+        move |stack: &mut Vec<Node<A, B>>, _state: &mut B| {
             let mut children = Vec::new();
             if num_in == 0 {
                 stack.push(Node::Leaf(sym.clone()))
@@ -475,51 +475,51 @@ impl Default for InstrState {
     }
 }
 
-pub fn store_a<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
+pub fn store_a() -> Sym<f64, InstrState> {
+    let f: Fn(&mut Vec<f64>, &mut InstrState) =
+        move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let arg = stack.pop().unwrap();
             state.reg_a = arg;
     };
     Sym { name: "sa".to_string(), arity: Arity::new(1, 0), fun: f }
 }
 
-pub fn load_a<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
+pub fn load_a() -> Sym<f64, InstrState> {
+    let f: Fn(&mut Vec<f64>, &mut InstrState) =
+        move |stack: &mut Vec<f64>, state: &mut InstrState| {
             stack.push(state.reg_a);
     };
     Sym { name: "la".to_string(), arity: Arity::new(0, 1), fun: f }
 }
 
-pub fn store_b<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
+pub fn store_b() -> Sym<f64, InstrState> {
+    let f: Fn(&mut Vec<f64>, &mut InstrState) =
+        move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let arg = stack.pop().unwrap();
             state.reg_b = arg;
     };
     Sym { name: "sb".to_string(), arity: Arity::new(1, 0), fun: f }
 }
 
-pub fn load_b<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
+pub fn load_b() -> Sym<f64, InstrState> {
+    let f: Fn(&mut Vec<f64>, &mut InstrState) =
+        move |stack: &mut Vec<f64>, state: &mut InstrState| {
             stack.push(state.reg_b);
     };
     Sym { name: "lb".to_string(), arity: Arity::new(0, 1), fun: f }
 }
 
-pub fn printout<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
+pub fn printout() -> Sym<f64, InstrState> {
+    let f: Fn(&mut Vec<f64>, &mut InstrState) =
+        move |stack: &mut Vec<f64>, state: &mut InstrState| {
             state.output.push(stack.pop().unwrap());
     };
     Sym { name: "p".to_string(), arity: Arity::new(1, 0), fun: f }
 }
 
-pub fn store_mem<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
+pub fn store_mem() -> Sym<f64, InstrState> {
+    let f: Fn(&mut Vec<f64>, &mut InstrState) =
+        move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let addr = stack.pop().unwrap();
             let arg = stack.pop().unwrap();
             if addr >= 0.0 && (addr as usize) < state.mem.len() {
@@ -529,9 +529,9 @@ pub fn store_mem<'a>() -> Sym<'a, f64, InstrState> {
     Sym { name: "sm".to_string(), arity: Arity::new(2, 0), fun: f }
 }
 
-pub fn load_mem<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
+pub fn load_mem() -> Sym<f64, InstrState> {
+    let f: Fn(&mut Vec<f64>, &mut InstrState) =
+        move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let addr = stack.pop().unwrap();
             if addr >= 0.0 && (addr as usize) < state.mem.len() {
                 stack.push(state.mem[addr as usize]);

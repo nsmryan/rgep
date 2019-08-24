@@ -2,6 +2,8 @@ use std::rc::Rc;
 use std::ops::{Add};
 
 
+/// Stack program arity, like a forth call stack
+/// signature.
 #[derive(Clone, PartialEq, Eq, Debug, Copy)]
 pub struct Arity {
     pub num_in:  usize,
@@ -47,15 +49,36 @@ fn test_arity_simple_cases() {
     assert!(ar3 + ar1 == Arity::new(7, 2), format!("arity was {:?}", ar1 + ar3));
 }
 
-pub struct Sym<'a, A, B> {
+/// A symbol in a stack program
+pub struct Sym<A, B> {
     pub name: String,
     pub arity: Arity,
-    pub fun: &'a Fn(&mut Vec<A>, &mut B),
+    pub fun: Fn(&mut Vec<A>, &mut B),
 }
 
-pub struct Program<'a, A, B>(pub Vec<&'a Sym<'a, A, B>>);
+impl<A: Clone, B: Clone> Clone for Sym<A, B> {
+    fn clone(&self) -> Self {
+        Sym { name: self.name.clone(),
+              arity: self.arity,
+              fun: self.fun.clone(),
+        }
+    }
+}
 
-impl<'a, A, B> Program<'a, A, B> {
+impl<A, B> Sym<A, B> {
+    pub fn new(name: String, arity: Arity, fun: Fn(&mut Vec<A>, &mut B)) -> Sym<A, B> {
+        Sym { name: name,
+              arity: arity,
+              fun: fun,
+        }
+    }
+}
+
+
+/// A stack program as a sequence of symbols
+pub struct Program<A, B>(pub Vec<Sym<A, B>>);
+
+impl<A, B> Program<A, B> {
     pub fn eval(&self, state: &mut B, default: A) -> A {
         let mut stack = Vec::new();
         self.eval_with_stack(state, default, &mut stack)
@@ -93,25 +116,6 @@ impl<'a, A, B> Program<'a, A, B> {
         }
 
         string
-    }
-}
-
-
-impl<'a, A: Clone, B: Clone> Clone for Sym<'a, A, B> {
-    fn clone(&self) -> Self {
-        Sym { name: self.name.clone(),
-              arity: self.arity,
-              fun: self.fun.clone(),
-        }
-    }
-}
-
-impl<'a, A, B> Sym<'a, A, B> {
-    pub fn new(name: String, arity: Arity, fun: &'a Fn(&mut Vec<A>, &mut B)) -> Sym<'a, A, B> {
-        Sym { name: name,
-              arity: arity,
-              fun: fun,
-        }
     }
 }
 

@@ -440,19 +440,21 @@ pub fn symbol_sym<'a, A: Copy>(sym: String) -> Sym<'a, A, Variables<A>> {
 pub fn node<'a, A: 'static + Clone, B: 'static + Clone>(sym: Sym<'a, A, B>) -> Sym<'a, Node<'a, A, B>, B> {
     let name = sym.name.clone();
     let num_in = sym.arity.num_in;
+    let sym_clone = sym.clone();
     let f: &Fn(&mut Vec<Node<'a, A, B>>, &mut B) =
         &move |stack: &mut Vec<Node<'a, A, B>>, _state: &mut B| {
             let mut children = Vec::new();
             if num_in == 0 {
-                stack.push(Node::Leaf(sym.clone()))
+                stack.push(Node::Leaf(sym_clone))
             } else {
                 for _ in 0..num_in {
                     children.push(stack.pop().unwrap());
                 }
-                stack.push(Node::Node(sym, children));
+                stack.push(Node::Node(sym_clone, children));
             }
         };
-    Sym{ name: name, arity: Arity::new(num_in, 1), fun: f }
+
+    Sym { name: name, arity: Arity::new(num_in, 1), fun: f }
 }
 
 
@@ -475,68 +477,67 @@ impl Default for InstrState {
     }
 }
 
+fn store_a_f(stack: &mut Vec<f64>, state: &mut InstrState) {
+    let arg = stack.pop().unwrap();
+    state.reg_a = arg;
+}
+
 pub fn store_a<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
-            let arg = stack.pop().unwrap();
-            state.reg_a = arg;
-    };
-    Sym { name: "sa".to_string(), arity: Arity::new(1, 0), fun: f }
+    Sym { name: "sa".to_string(), arity: Arity::new(1, 0), fun: &store_a_f }
+}
+
+fn load_a_f(stack: &mut Vec<f64>, state: &mut InstrState) {
+    stack.push(state.reg_a);
 }
 
 pub fn load_a<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
-            stack.push(state.reg_a);
-    };
-    Sym { name: "la".to_string(), arity: Arity::new(0, 1), fun: f }
+    Sym { name: "la".to_string(), arity: Arity::new(0, 1), fun: &load_a_f }
+}
+
+fn store_b_f(stack: &mut Vec<f64>, state: &mut InstrState) {
+    let arg = stack.pop().unwrap();
+    state.reg_b = arg;
 }
 
 pub fn store_b<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
-            let arg = stack.pop().unwrap();
-            state.reg_b = arg;
-    };
-    Sym { name: "sb".to_string(), arity: Arity::new(1, 0), fun: f }
+    Sym { name: "sb".to_string(), arity: Arity::new(1, 0), fun: &store_b_f }
+}
+
+fn load_b_f(stack: &mut Vec<f64>, state: &mut InstrState) {
+    stack.push(state.reg_b);
 }
 
 pub fn load_b<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
-            stack.push(state.reg_b);
-    };
-    Sym { name: "lb".to_string(), arity: Arity::new(0, 1), fun: f }
+    Sym { name: "lb".to_string(), arity: Arity::new(0, 1), fun: &load_b_f }
+}
+
+fn printout_f(stack: &mut Vec<f64>, state: &mut InstrState) {
+    state.output.push(stack.pop().unwrap());
 }
 
 pub fn printout<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
-            state.output.push(stack.pop().unwrap());
-    };
-    Sym { name: "p".to_string(), arity: Arity::new(1, 0), fun: f }
+    Sym { name: "p".to_string(), arity: Arity::new(1, 0), fun: &printout_f }
+}
+
+fn store_mem_f(stack: &mut Vec<f64>, state: &mut InstrState) {
+    let addr = stack.pop().unwrap();
+    let arg = stack.pop().unwrap();
+    if addr >= 0.0 && (addr as usize) < state.mem.len() {
+        state.mem[addr as usize] = arg;
+    }
 }
 
 pub fn store_mem<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
-            let addr = stack.pop().unwrap();
-            let arg = stack.pop().unwrap();
-            if addr >= 0.0 && (addr as usize) < state.mem.len() {
-                state.mem[addr as usize] = arg;
-            }
-    };
-    Sym { name: "sm".to_string(), arity: Arity::new(2, 0), fun: f }
+    Sym { name: "sm".to_string(), arity: Arity::new(2, 0), fun: &store_mem_f }
 }
 
+fn load_mem_f(stack: &mut Vec<f64>, state: &mut InstrState) {
+    let addr = stack.pop().unwrap();
+    if addr >= 0.0 && (addr as usize) < state.mem.len() {
+        stack.push(state.mem[addr as usize]);
+    }
+}
 pub fn load_mem<'a>() -> Sym<'a, f64, InstrState> {
-    let f: &Fn(&mut Vec<f64>, &mut InstrState) =
-        &move |stack: &mut Vec<f64>, state: &mut InstrState| {
-            let addr = stack.pop().unwrap();
-            if addr >= 0.0 && (addr as usize) < state.mem.len() {
-                stack.push(state.mem[addr as usize]);
-            }
-    };
-    Sym { name: "lm".to_string(), arity: Arity::new(2, 1), fun: f }
+    Sym { name: "lm".to_string(), arity: Arity::new(2, 1), fun: &load_mem_f }
 }
 

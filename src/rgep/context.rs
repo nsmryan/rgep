@@ -27,13 +27,15 @@ impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
 }
 
 impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
-    pub fn decode(&self, code: u8) -> &'a Sym<'a, A, B> {
+    pub fn decode(&'a self, code: u8) -> &'a Sym<'a, A, B> {
         let is_function = (code & 1) == 1;
         let index = (code >> 1) as usize;
         if is_function {
-            return &'a self.functions[index % self.functions.len()];
+            let reference = &self.functions[index % self.functions.len()];
+            return reference;
         } else {
-            return &'a self.terminals[index % self.terminals.len()];
+            let reference = &self.terminals[index % self.terminals.len()];
+            return reference;
         }
     }
 }
@@ -79,7 +81,7 @@ impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
         }
     }
 
-    pub fn compile(&self, ind: &Ind<u8>) -> Program<'a, A, B> {
+    pub fn compile(&'a self, ind: &Ind<u8>) -> Program<'a, A, B> {
         let mut program = Program(Vec::with_capacity(ind.0.len()));
 
         self.compile_to(ind, &mut program);
@@ -87,7 +89,7 @@ impl<'a, A: Clone, B: Clone + 'static> Context<'a, A, B> {
         program
     }
 
-    pub fn compile_to(&self, ind: &Ind<u8>, prog: &mut Program<'a, A, B>) {
+    pub fn compile_to(&'a self, ind: &Ind<u8>, prog: &mut Program<'a, A, B>) {
         prog.0.clear();
         for code in ind.0.iter() {
             let sym = self.decode(*code);

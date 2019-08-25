@@ -98,6 +98,9 @@ impl<A: Clone, B: Clone + 'static> Context<A, B> {
 
 #[test]
 fn test_eval_simple_equation() {
+    use float_cmp::ApproxEq;
+    use domains::arith::plus_sym;
+
     let terminals =
         vec!(zero_sym(), one_sym(), two_sym());
 

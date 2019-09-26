@@ -10,6 +10,9 @@ use float_cmp::*;
 
 use rand::prelude::*;
 
+#[cfg(test)]
+use crate::ops::*;
+
 use crate::types::*;
 use crate::crossover::*;
 use crate::point_mutation::*;
@@ -193,5 +196,57 @@ pub fn rgep<R, A, B>(params: &RgepParams,
     }
 
     *pop
+}
+
+#[test]
+fn test_point_mutation_flips_bits() {
+    let terminals: Vec<Sym<f64, ()>> =
+        vec!(zero_sym(), one_sym(), two_sym());
+
+    let functions =
+        vec!(plus_sym());
+
+    let num_inds  = 200;
+    let num_words = 200;
+
+    let params: RgepParams = RgepParams {
+        prob_mut: 0.001,
+        prob_one_point_crossover: 0.6,
+        prob_two_point_crossover: 0.6,
+        prob_rotation: 0.9,
+        pop_size: num_inds,
+        ind_size: num_words,
+        num_gens: 100,
+        elitism: 0,
+    };
+
+    let context = Context {
+        terminals: terminals,
+        functions: functions,
+        default: 0.0,
+    };
+
+    let mut rng = thread_rng();
+
+    let mut pop = create_rgep(&params, &context, &mut rng);
+    let bits_per_sym = context.bits_per_sym();
+    point_mutation(&mut pop, bits_per_sym, params.prob_mut, &mut rng);
+
+    let mut num_ones = 0;
+    for ind in pop.0 {
+        for code_word in ind.0 {
+            for bit_index in 0..bits_per_sym {
+                if code_word & (1 << bit_index) != 0 {
+                    num_ones += 1;
+                }
+            }
+        }
+    }
+
+    println!("num ones = {}", num_ones);
+    let percent_ones = num_ones as f64 / (num_inds as f64 * num_words as f64 * bits_per_sym as f64);
+    println!("percent ones = {}", percent_ones);
+    // NOTE this does a statically likely test within a unit test, which may be a bad idea.
+    assert!((percent_ones - 0.5).abs() < 0.005, format!("Percent ones was expected to be 0.5, but was {}", percent_ones));
 }
 

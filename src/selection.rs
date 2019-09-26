@@ -31,7 +31,7 @@ pub fn k_elite(fitnesses: &Vec<f64>, num_elite: usize) -> Vec<usize> {
     elite_indices
 }
 
-pub fn tournament_selection<R: Rng>(pop: &PopU8, new_pop: &mut PopU8, fitnesses: Vec<f64>, prob: f64, tourn_size: usize, elitism: usize, rng: &mut R) {
+pub fn tournament_selection<R: Rng, T: Copy>(pop: &Pop<T>, new_pop: &mut Pop<T>, fitnesses: Vec<f64>, prob: f64, tourn_size: usize, elitism: usize, rng: &mut R) {
     let winner_rng = Uniform::new(0.0, 1.0).unwrap();
 
     let num_inds = pop.0.len();
@@ -49,7 +49,7 @@ pub fn tournament_selection<R: Rng>(pop: &PopU8, new_pop: &mut PopU8, fitnesses:
             let ind = &pop.0[index];
             let fitness = fitnesses[index];
             (ind, fitness)
-        }).collect::<Vec<(&Ind<u8>, f64)>>();
+        }).collect::<Vec<(&Ind<T>, f64)>>();
 
         tourny.sort_unstable_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 

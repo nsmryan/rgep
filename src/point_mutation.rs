@@ -16,7 +16,7 @@ use crate::rgep::*;
 use crate::ga::*;
 
 
-pub fn point_mutation_naive<T, R: Rng>(pop: &mut Pop<T>, bits_used: usize, pm: f64, rng: &mut R) {
+pub fn point_mutation_naive<T: PrimInt, R: Rng>(pop: &mut Pop<T>, bits_used: usize, pm: f64, rng: &mut R) {
     for ind in pop.0.iter_mut() {
         point_mutate_naive(ind.0.iter_mut(), bits_used, pm, rng);
     }
@@ -37,7 +37,7 @@ pub fn point_mutate_naive<'a, I, T, R: Rng>(ind: I, bits_used: usize, pm: f64, r
     }
 }
 
-pub fn point_mutation<T, R: Rng>(pop: &mut Pop<T>, bits_used: usize, pm: f64, rng: &mut R) {
+pub fn point_mutation<T: PrimInt, R: Rng>(pop: &mut Pop<T>, bits_used: usize, pm: f64, rng: &mut R) {
     for ind in pop.0.iter_mut() {
         point_mutate(ind, bits_used, pm, rng);
     }

@@ -36,7 +36,7 @@ impl Default for GaParams {
     }
 }
 
-pub fn create_ga<R>(params: &GaParams, rng: &mut R) -> Pop 
+pub fn create_ga<R>(params: &GaParams, rng: &mut R) -> PopU8 
 where R: Rng {
     let mut pop = Vec::with_capacity(params.pop_size);
     for _ in 0..params.pop_size {
@@ -50,14 +50,14 @@ where R: Rng {
     Pop(pop)
 }
 
-pub fn create_ga_fast(params: &GaParams) -> Pop {
+pub fn create_ga_fast(params: &GaParams) -> PopU8 {
     let ind = Ind(std::iter::repeat(0x0).take(params.ind_size).collect());
     Pop(iter::repeat(ind).take(params.pop_size).collect())
 }
 
 pub fn ga<R: Rng>(params: &GaParams,
                   eval: &dyn Fn(&Ind<u8>, &mut R) -> f64,
-                  rng: &mut R) -> Pop {
+                  rng: &mut R) -> PopU8 {
     let mut pop = create_ga(&params, rng);
     let mut alt_pop = create_ga_fast(&params);
 

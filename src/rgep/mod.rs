@@ -122,7 +122,7 @@ impl Default for RgepParams {
     }
 }
 
-pub fn create_rgep<A, R, B>(params: &RgepParams, context: &Context<A, B>, rng: &mut R) -> Pop 
+pub fn create_rgep<A, R, B>(params: &RgepParams, context: &Context<A, B>, rng: &mut R) -> PopU8 
     where R: Rng, A: Clone, B: Clone {
     let mut pop = Vec::with_capacity(params.pop_size);
 
@@ -142,13 +142,13 @@ pub fn create_rgep<A, R, B>(params: &RgepParams, context: &Context<A, B>, rng: &
     Pop(pop)
 }
 
-pub fn create_rgep_fast(params: &RgepParams) -> Pop {
+pub fn create_rgep_fast(params: &RgepParams) -> PopU8 {
     let ind = Ind(iter::repeat(0x0).take(params.ind_size).collect());
     Pop(iter::repeat(ind).take(params.pop_size).collect())
 }
 
 
-pub fn rgep_evaluate<R, A, B>(pop: &Pop,
+pub fn rgep_evaluate<R, A, B>(pop: &PopU8,
                               context: &Context<A, B>,
                               state: &B,
                               eval_prog: &EvalFunction<A, B, R>,
@@ -174,7 +174,7 @@ pub fn rgep<R, A, B>(params: &RgepParams,
                      context: &Context<A, B>,
                      state: &B,
                      eval_ind: &EvalFunction<A, B, R>,
-                     rng: &mut R) -> Pop 
+                     rng: &mut R) -> PopU8 
     where R: Rng, A: Clone, B: Clone {
     let mut pop = Box::new(create_rgep(&params, &context, rng));
     let mut alt_pop = Box::new(create_rgep_fast(&params));

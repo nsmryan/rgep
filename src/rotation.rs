@@ -5,7 +5,7 @@ use statrs::distribution::Uniform;
 use types::*;
 
 
-pub fn rotation<R: Rng>(pop: &mut Pop, pr: f64, rng: &mut R) {
+pub fn rotation<R: Rng>(pop: &mut PopU8, pr: f64, rng: &mut R) {
     let ind_len = pop.0[0].0.len();
 
     let rotation_sampler = Uniform::new(0.0, 1.0).unwrap();

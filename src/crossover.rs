@@ -8,7 +8,7 @@ use im::vector::Vector;
 use types::*;
 
 
-pub fn crossover_one_point<R: Rng>(pop: &mut PopU8, words_per_ind: usize, bits_per_sym: usize, pc1: f64, rng: &mut R) {
+pub fn crossover_one_point<T, R: Rng>(pop: &mut Pop<T>, words_per_ind: usize, bits_per_sym: usize, pc1: f64, rng: &mut R) {
     let pc1_sampler = Uniform::new(0.0, 1.0).unwrap();
     let cross_point_sampler = Uniform::new(0.0, (words_per_ind * bits_per_sym) as f64).unwrap();
 
@@ -51,7 +51,7 @@ fn test_cross_at_point() {
     assert!(pair[1] == Ind(vec!(0xF, 0xF, 0xC, 0x0, 0x0)));
 }
 
-pub fn crossover_two_point<R: Rng>(pop: &mut PopU8, words_per_ind: usize, bits_per_sym: usize, pc2: f64, rng: &mut R) {
+pub fn crossover_two_point<T, R: Rng>(pop: &mut Pop<T>, words_per_ind: usize, bits_per_sym: usize, pc2: f64, rng: &mut R) {
     let pc2_sampler = Uniform::new(0.0, 1.0).unwrap();
     let cross_point_sampler = Uniform::new(0.0, (words_per_ind * bits_per_sym) as f64).unwrap();
 

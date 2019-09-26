@@ -18,7 +18,7 @@ pub fn fittest(fitnesses: &Vec<f64>) -> usize {
 }
 
 pub fn evaluate<R>(pop: &Pop,
-                      eval: &Fn(&Ind<u8>, &mut R) -> f64,
+                      eval: &dyn Fn(&Ind<u8>, &mut R) -> f64,
                       rng: &mut R) -> Vec<f64>
     where R: Rng {
     let mut fitnesses = Vec::new();

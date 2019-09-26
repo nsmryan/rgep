@@ -56,7 +56,7 @@ pub fn create_ga_fast(params: &GaParams) -> Pop {
 }
 
 pub fn ga<R: Rng>(params: &GaParams,
-                  eval: &Fn(&Ind<u8>, &mut R) -> f64,
+                  eval: &dyn Fn(&Ind<u8>, &mut R) -> f64,
                   rng: &mut R) -> Pop {
     let mut pop = create_ga(&params, rng);
     let mut alt_pop = create_ga_fast(&params);

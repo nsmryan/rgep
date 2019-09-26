@@ -218,7 +218,7 @@ impl<A> Arith<A>
 }
 
 pub fn add_expr<A>() -> Sym<Arith<A>, Variables<A>> {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
@@ -228,7 +228,7 @@ pub fn add_expr<A>() -> Sym<Arith<A>, Variables<A>> {
 }
 
 pub fn sub_expr<A>() -> Sym<Arith<A>, Variables<A>> {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
@@ -238,7 +238,7 @@ pub fn sub_expr<A>() -> Sym<Arith<A>, Variables<A>> {
 }
 
 pub fn div_expr<A>() -> Sym<Arith<A>, Variables<A>> {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
@@ -248,7 +248,7 @@ pub fn div_expr<A>() -> Sym<Arith<A>, Variables<A>> {
 }
 
 pub fn mult_expr<A>() -> Sym<Arith<A>, Variables<A>> {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
@@ -258,7 +258,7 @@ pub fn mult_expr<A>() -> Sym<Arith<A>, Variables<A>> {
 }
 
 pub fn const_expr<A: ToString + Copy + 'static>(constant: A) -> Sym<Arith<A>, Variables<A>> {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             stack.push(Arith::Const(constant));
     });
@@ -267,7 +267,7 @@ pub fn const_expr<A: ToString + Copy + 'static>(constant: A) -> Sym<Arith<A>, Va
 
 pub fn var_expr<A>(name: String) -> Sym<Arith<A>, Variables<A>> {
     let sym_name = name.clone();
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             stack.push(Arith::Var(name.clone()));
     });
@@ -319,15 +319,15 @@ pub fn tuck<A: Clone, B>(stack: &mut Vec<A>, _b: &mut B) {
 }
 
 pub fn make_const<A: 'static + ToString + Copy, B: 'static>(constant: A) -> Sym<A, B> {
-    let f: Rc<Fn(&mut Vec<A>, &mut B)> = Rc::new(move |stack, _context| {
+    let f: Rc<dyn Fn(&mut Vec<A>, &mut B)> = Rc::new(move |stack, _context| {
         stack.push(constant);
     });
     Sym::new(constant.to_string(), Arity::new(0, 1), f)
 }
 
-pub fn make_binary<A, B>(name: &str, f: Rc<Fn(A, A) -> A>) -> Sym<A, B>
+pub fn make_binary<A, B>(name: &str, f: Rc<dyn Fn(A, A) -> A>) -> Sym<A, B>
     where A: 'static + ToString + Copy, B: 'static {
-    let f: Rc<Fn(&mut Vec<A>, &mut B)> = Rc::new(move |stack, _context| {
+    let f: Rc<dyn Fn(&mut Vec<A>, &mut B)> = Rc::new(move |stack, _context| {
         let arg1 = stack.pop().unwrap();
         let arg2 = stack.pop().unwrap();
         stack.push(f(arg1, arg2));
@@ -335,9 +335,9 @@ pub fn make_binary<A, B>(name: &str, f: Rc<Fn(A, A) -> A>) -> Sym<A, B>
     Sym::new(name.to_string(), Arity::new(2, 1), f)
 }
 
-pub fn make_unary<A, B>(name: &str, f: Rc<Fn(A) -> A>) -> Sym<A, B>
+pub fn make_unary<A, B>(name: &str, f: Rc<dyn Fn(A) -> A>) -> Sym<A, B>
     where A: 'static + ToString + Copy, B: 'static {
-    let f: Rc<Fn(&mut Vec<A>, &mut B)> = Rc::new(move |stack, _context| {
+    let f: Rc<dyn Fn(&mut Vec<A>, &mut B)> = Rc::new(move |stack, _context| {
         let arg = stack.pop().unwrap();
         stack.push(f(arg));
     });
@@ -430,7 +430,7 @@ pub fn tuck_sym<A: 'static + Clone, B: 'static>() -> Sym<A, B> {
 
 pub fn symbol_sym<A: Copy>(sym: String) -> Sym<A, Variables<A>> {
     let name = sym.clone();
-    let f: Rc<Fn(&mut Vec<A>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<A>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<A>, map: &mut Variables<A>| {
             stack.push(*map.get(&name).unwrap());
     });
@@ -440,7 +440,7 @@ pub fn symbol_sym<A: Copy>(sym: String) -> Sym<A, Variables<A>> {
 pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>) -> Sym<Node<A, B>, B> {
     let name = sym.name.clone();
     let num_in = sym.arity.num_in;
-    let f: Rc<Fn(&mut Vec<Node<A, B>>, &mut B)> =
+    let f: Rc<dyn Fn(&mut Vec<Node<A, B>>, &mut B)> =
         Rc::new(move |stack: &mut Vec<Node<A, B>>, _state: &mut B| {
             let mut children = Vec::new();
             if num_in == 0 {
@@ -476,7 +476,7 @@ impl Default for InstrState {
 }
 
 pub fn store_a() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let arg = stack.pop().unwrap();
             state.reg_a = arg;
@@ -485,7 +485,7 @@ pub fn store_a() -> Sym<f64, InstrState> {
 }
 
 pub fn load_a() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             stack.push(state.reg_a);
     });
@@ -493,7 +493,7 @@ pub fn load_a() -> Sym<f64, InstrState> {
 }
 
 pub fn store_b() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let arg = stack.pop().unwrap();
             state.reg_b = arg;
@@ -502,7 +502,7 @@ pub fn store_b() -> Sym<f64, InstrState> {
 }
 
 pub fn load_b() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             stack.push(state.reg_b);
     });
@@ -510,7 +510,7 @@ pub fn load_b() -> Sym<f64, InstrState> {
 }
 
 pub fn printout() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             state.output.push(stack.pop().unwrap());
     });
@@ -518,7 +518,7 @@ pub fn printout() -> Sym<f64, InstrState> {
 }
 
 pub fn store_mem() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let addr = stack.pop().unwrap();
             let arg = stack.pop().unwrap();
@@ -530,7 +530,7 @@ pub fn store_mem() -> Sym<f64, InstrState> {
 }
 
 pub fn load_mem() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let addr = stack.pop().unwrap();
             if addr >= 0.0 && (addr as usize) < state.mem.len() {

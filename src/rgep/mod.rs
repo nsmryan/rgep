@@ -20,7 +20,7 @@ use program::*;
 use context::*;
 
 
-pub type EvalFunction<A, B, R> = Fn(&Program<A, B>, &mut B, &mut R) -> f64;
+pub type EvalFunction<A, B, R> = dyn Fn(&Program<A, B>, &mut B, &mut R) -> f64;
 
 pub type Variables<A> = HashMap<String, A>;
 

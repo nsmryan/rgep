@@ -1,4 +1,5 @@
 use rand::prelude::*;
+use std::iter::IntoIterator;
 
 use num::PrimInt;
 
@@ -17,16 +18,17 @@ use crate::ga::*;
 
 pub fn point_mutation_naive<R: Rng>(pop: &mut Pop, bits_used: usize, pm: f64, rng: &mut R) {
     for ind in pop.0.iter_mut() {
-        point_mutate_naive(ind, bits_used, pm, rng);
+        point_mutate_naive(ind.0.iter_mut(), bits_used, pm, rng);
     }
 }
 
-pub fn point_mutate_naive<T, R: Rng>(ind: &mut Ind<T>, bits_used: usize, pm: f64, rng: &mut R) 
+pub fn point_mutate_naive<'a, I, T, R: Rng>(ind: I, bits_used: usize, pm: f64, rng: &mut R) 
     where R: Rng,
-          T: PrimInt {
+          I: 'a + IntoIterator<Item=&'a mut T>,
+          T: PrimInt + 'a {
     let sampler = Uniform::new(0.0, 1.0).unwrap();
 
-    for loc in ind.0.iter_mut() {
+    for loc in ind.into_iter() {
         for bit_index in 0..bits_used {
             if sampler.sample(rng) < pm {
                 *loc = *loc ^ (num::one::<T>() << bit_index);

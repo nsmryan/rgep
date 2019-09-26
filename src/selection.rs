@@ -70,13 +70,13 @@ pub fn tournament_selection<R: Rng, T: Copy>(pop: &Pop<T>, new_pop: &mut Pop<T>,
     }
 }
 
-pub fn stochastic_universal_sampling<R: Rng>(pop: &PopU8, new_pop: &mut PopU8, fitnesses: Vec<f64>, elitism: usize, rng: &mut R) {
+pub fn stochastic_universal_sampling<R: Rng, T>(pop: &Pop<T>, new_pop: &mut Pop<T>, fitnesses: Vec<f64>, elitism: usize, rng: &mut R) {
     let offset_scaler = Uniform::new(0.0, 1.0).unwrap().sample(rng);
 
     select_stochastic_universal(pop, new_pop, fitnesses, elitism, offset_scaler);
 }
 
-pub fn select_stochastic_universal_naive(pop: &PopU8, fitnesses: Vec<f64>, elitism: usize, offset_scaler: f64) -> PopU8 {
+pub fn select_stochastic_universal_naive<T>(pop: &Pop<T>, fitnesses: Vec<f64>, elitism: usize, offset_scaler: f64) -> Pop<T> {
     let num_inds = pop.0.len();
     let mut new_pop = Vec::with_capacity(num_inds);
 

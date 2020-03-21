@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use rand::prelude::*;
 
 use rgep::*;
-use rgep::program::*;
 use rgep::context::*;
 use domains::arith::{mult_expr, add_expr, const_expr, var_expr};
 

@@ -8,7 +8,6 @@ use std::cmp::max;
 
 use domains::symbols::*;
 
-use crate::rgep::program::*;
 use crate::types::*;
 
 

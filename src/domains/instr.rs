@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use rgep::program::*;
+use domains::symbols::*;
 
 
 #[derive(Debug, Clone)]

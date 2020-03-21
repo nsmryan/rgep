@@ -4,10 +4,9 @@ use std::fmt::Display;
 use num::Num;
 use num::FromPrimitive;
 
-use ops::*;
 
-use rgep::*;
-use rgep::program::*;
+use domains::symbols::*;
+use domains::generic::*;
 
 
 #[derive(Clone, PartialEq)]

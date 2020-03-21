@@ -10,7 +10,7 @@ use rand::prelude::*;
 use rgep::*;
 use rgep::program::*;
 use rgep::context::*;
-use rgep::ops::{mult_expr, add_expr, const_expr, var_expr};
+use domains::arith::{mult_expr, add_expr, const_expr, var_expr};
 
 
 fn popcount(word: u32) -> u32 {

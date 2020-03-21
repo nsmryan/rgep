@@ -1,8 +1,7 @@
 use std::rc::Rc;
 
-use ops::*;
-
-use rgep::program::*;
+use domains::generic::*;
+use domains::symbols::*;
 
 
 pub fn and_sym<B:'static>() -> Sym<u32, B> {

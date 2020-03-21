@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use rgep::program::*;
+use domains::symbols::*;
 
 
 pub fn push_context<A: Copy>(stack: &mut Vec<A>, b: &mut A) {

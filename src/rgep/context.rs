@@ -6,6 +6,8 @@ use std::cmp::max;
 //#[cfg(test)]
 //use crate::ops::*;
 
+use domains::symbols::*;
+
 use crate::rgep::program::*;
 use crate::types::*;
 

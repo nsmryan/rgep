@@ -1,7 +1,6 @@
 pub mod program;
 pub mod context;
 
-use std::collections::HashMap;
 use std::iter;
 use std::iter::*;
 
@@ -19,81 +18,14 @@ use crate::point_mutation::*;
 use crate::rotation::*;
 use crate::selection::*;
 
+use domains::symbols::*;
+
 use program::*;
 use context::*;
 
 
 pub type EvalFunction<A, B, R> = dyn Fn(&Program<A, B>, &mut B, &mut R) -> f64;
 
-pub type Variables<A> = HashMap<String, A>;
-
-#[derive(Clone)]
-pub enum Node<A, B> {
-    Node(Sym<A, B>, Vec<Node<A, B>>),
-    Leaf(Sym<A, B>)
-}
-
-impl<A: Clone, B: Clone> Node<A, B> {
-    pub fn linearize(&self) -> Vec<Sym<A, B>> {
-        let mut syms = Vec::new();
-
-        self.linearize_helper(&mut syms);
-
-        syms
-    }
-
-    pub fn linearize_helper(&self, syms: &mut Vec<Sym<A, B>>) {
-        match self {
-            Node::Leaf(sym) => {
-                syms.push(sym.clone());
-            },
-
-            Node::Node(sym, children) => {
-                for node in children.iter().rev() {
-                    node.linearize_helper(syms);
-                }
-                syms.push(sym.clone());
-            },
-        }
-    }
-
-    pub fn eval(&self, state: &mut B) -> A {
-        let mut stack = Vec::new();
-
-        match self {
-            Node::Leaf(sym) => {
-                assert!(sym.arity.num_in == 0);
-                assert!(sym.arity.num_out == 1);
-                (sym.fun)(&mut stack, state);
-                stack.pop().unwrap()
-            },
-
-            Node::Node(sym, children) => {
-                for child in children {
-                    stack.push(child.eval(state));
-                }
-
-                (sym.fun)(&mut stack, state);
-
-                stack.pop().unwrap()
-            },
-        }
-    }
-
-    pub fn is_leaf(&self) -> bool {
-        match self {
-            Node::Leaf(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn sym(&self) -> Sym<A, B> {
-        match self {
-            Node::Leaf(sym) => sym.clone(),
-            Node::Node(sym, _) => sym.clone(),
-        }
-    }
-}
 
 #[derive(Clone)]
 pub struct RgepParams {

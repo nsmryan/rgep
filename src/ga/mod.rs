@@ -6,7 +6,7 @@ use rand::prelude::*;
 
 use num::PrimInt;
 
-use myopic::lens::Getter;
+use myopic::lens::*;
 
 use crate::types::*;
 use crate::crossover::*;
@@ -28,9 +28,6 @@ pub fn compose_stages<S, R>(stage1: Stage<S, R>, stage2: Stage<S, R>) -> Stage<S
 
     return f;
 }
-
-type Get<S, D> = Rc<dyn Fn(&S) -> D>;
-type GetMut<S, D> = Rc<dyn Fn(&mut S) -> &mut D>;
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct GaParams {
@@ -92,19 +89,23 @@ impl GaState {
     }
 }
 
-pub fn point_mutation_stage<S, R, T>(pop_getter: GetMut<S, PopU8>,
-                                     bits_used_getter: Get<S, usize>,
-                                     pm_getter: Get<S, f64>) -> Stage<S, R>
-                                              
+pub struct PmState<'a> {
+    population: &'a mut PopU8,
+    pm: f64,
+    bits_used: usize,
+}
+pub fn point_mutation_stage<'a, S, R, T, L>(lens: L) -> Stage<S, R>
     where R: Rng + 'static,
           T: PrimInt + 'static,
-          S: 'static, {
+          S: 'a, 
+          L: Optical<Input=S, Output=PmState<'a>> + 'static {
     let f: Rc<dyn Fn(&mut S, &mut R)> = Rc::new(move |state, rng| {
-        let bits_used = bits_used_getter(state);
-        let pm = pm_getter(state);
-        let pop = pop_getter(state);
-
-        point_mutation(pop, bits_used, pm, rng);
+        let pm_state = lens.get(state);
+        point_mutation(pm_state.population,
+                       pm_state.bits_used,
+                       pm_state.pm,
+                       rng);
+        lens.set(state, pm_state);
     });
 
     return f;

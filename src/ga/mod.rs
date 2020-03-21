@@ -42,38 +42,47 @@ pub struct GaState {
     population: PopU8,
 }
 
-pub fn create_ga<R>(params: &GaParams, rng: &mut R) -> PopU8 
-where R: Rng {
-    let mut pop = Vec::with_capacity(params.pop_size);
-    for _ in 0..params.pop_size {
-        let mut ind_vec = Vec::with_capacity(params.ind_size);
-        for _ in 0..params.ind_size {
-            ind_vec.push(rng.gen_range(0, 0xFF) as u8);
+impl GaState {
+    pub fn create_ga<R>(params: &GaParams, rng: &mut R) -> GaState 
+    where R: Rng {
+        let mut pop = Vec::with_capacity(params.pop_size);
+        for _ in 0..params.pop_size {
+            let mut ind_vec = Vec::with_capacity(params.ind_size);
+            for _ in 0..params.ind_size {
+                ind_vec.push(rng.gen_range(0, 0xFF) as u8);
+            }
+            pop.push(Ind(ind_vec));
         }
-        pop.push(Ind(ind_vec));
+
+        let population = Pop(pop);
+        return GaState { population,
+                         params: *params,
+        };
     }
 
-    Pop(pop)
-}
+    pub fn create_ga_fast(params: &GaParams) -> GaState {
+        let ind = Ind(std::iter::repeat(0x0).take(params.ind_size).collect());
+        let population = Pop(iter::repeat(ind).take(params.pop_size).collect());
 
-pub fn create_ga_fast(params: &GaParams) -> PopU8 {
-    let ind = Ind(std::iter::repeat(0x0).take(params.ind_size).collect());
-    Pop(iter::repeat(ind).take(params.pop_size).collect())
+        return GaState { population,
+                         params: *params,
+        };
+    }
 }
 
 pub fn ga<R: Rng>(params: &GaParams,
                   eval: &dyn Fn(&Ind<u8>, &mut R) -> f64,
                   rng: &mut R) -> PopU8 {
-    let mut pop = create_ga(&params, rng);
-    let mut alt_pop = create_ga_fast(&params);
+    let mut state = GaState::create_ga(&params, rng);
+    let mut alt_state = GaState::create_ga_fast(&params);
 
     for _ in 0..params.num_gens {
-        point_mutation(&mut pop, 8, params.prob_pm, rng);
-        crossover_one_point(&mut pop, params.ind_size, 8, params.prob_pc1, rng);
-        let fitnesses = evaluate(&pop, eval.clone(), rng);
-        stochastic_universal_sampling(&pop, &mut alt_pop, fitnesses, params.elitism, rng);
+        point_mutation(&mut state.population, 8, params.prob_pm, rng);
+        crossover_one_point(&mut state.population, params.ind_size, 8, params.prob_pc1, rng);
+        let fitnesses = evaluate(&state.population, eval.clone(), rng);
+        stochastic_universal_sampling(&state.population, &mut alt_state.population, fitnesses, params.elitism, rng);
     }
 
-    pop
+    state.population
 }
 

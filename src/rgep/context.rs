@@ -1,11 +1,5 @@
 use std::cmp::max;
 
-//#[cfg(test)]
-//use float_cmp::ApproxEq;
-
-//#[cfg(test)]
-//use crate::ops::*;
-
 use domains::symbols::*;
 
 use crate::types::*;

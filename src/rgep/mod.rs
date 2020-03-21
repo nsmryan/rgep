@@ -3,13 +3,7 @@ pub mod context;
 use std::iter;
 use std::iter::*;
 
-// #[cfg(test)]
-// use float_cmp::*;
-
 use rand::prelude::*;
-
-//#[cfg(test)]
-//use crate::ops::*;
 
 use crate::types::*;
 use crate::crossover::*;

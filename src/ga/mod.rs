@@ -1,7 +1,12 @@
-use rand::prelude::*;
-
+use std::rc::Rc;
 use std::iter;
 use std::iter::*;
+
+use rand::prelude::*;
+
+use num::PrimInt;
+
+use myopic::lens::Getter;
 
 use crate::types::*;
 use crate::crossover::*;
@@ -9,6 +14,23 @@ use crate::point_mutation::*;
 use crate::selection::*;
 use crate::evaluation::*;
 
+
+type Stage<State, R> = Rc<dyn Fn(&mut State, &mut R)>;
+type StageTransformer<State, R> = Rc<dyn Fn(Stage<State, R>) -> Stage<State, R>>;
+
+pub fn compose_stages<S, R>(stage1: Stage<S, R>, stage2: Stage<S, R>) -> Stage<S, R> 
+    where S: 'static ,
+          R: 'static {
+    let f: Rc<dyn Fn(&mut S, &mut R)> = Rc::new(move |state, rng| {
+        stage1(state, rng);
+        stage2(state, rng);
+    });
+
+    return f;
+}
+
+type Get<S, D> = Rc<dyn Fn(&S) -> D>;
+type GetMut<S, D> = Rc<dyn Fn(&mut S) -> &mut D>;
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct GaParams {
@@ -68,6 +90,24 @@ impl GaState {
                          params: *params,
         };
     }
+}
+
+pub fn point_mutation_stage<S, R, T>(pop_getter: GetMut<S, PopU8>,
+                                     bits_used_getter: Get<S, usize>,
+                                     pm_getter: Get<S, f64>) -> Stage<S, R>
+                                              
+    where R: Rng + 'static,
+          T: PrimInt + 'static,
+          S: 'static, {
+    let f: Rc<dyn Fn(&mut S, &mut R)> = Rc::new(move |state, rng| {
+        let bits_used = bits_used_getter(state);
+        let pm = pm_getter(state);
+        let pop = pop_getter(state);
+
+        point_mutation(pop, bits_used, pm, rng);
+    });
+
+    return f;
 }
 
 pub fn ga<R: Rng>(params: &GaParams,

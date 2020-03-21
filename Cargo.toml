@@ -18,6 +18,7 @@ float-cmp = "0.4"
 rayon = "1.0"
 im = "12.3"
 num = "0.2"
+myopic = "0.1"
 
 [dev-dependencies]
 criterion = "0.2"

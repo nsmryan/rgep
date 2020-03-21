@@ -1,5 +1,6 @@
-use rand::prelude::*;
 use std::iter::IntoIterator;
+
+use rand::prelude::*;
 
 use num::PrimInt;
 
@@ -8,12 +9,6 @@ use statrs::distribution::{Uniform, Geometric};
 use im::vector::Vector;
 
 use types::*;
-
-//#[cfg(test)]
-//use crate::rgep::*;
-
-//#[cfg(test)]
-//use crate::ga::*;
 
 
 pub fn point_mutation_naive<T: PrimInt, R: Rng>(pop: &mut Pop<T>, bits_used: usize, pm: f64, rng: &mut R) {

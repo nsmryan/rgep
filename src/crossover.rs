@@ -1,6 +1,8 @@
 use rand::prelude::*;
 use rand::distributions::Distribution;
 
+use num::{PrimInt, ToPrimitive, FromPrimitive};
+
 use statrs::distribution::Uniform;
 
 use im::vector::Vector;
@@ -8,7 +10,9 @@ use im::vector::Vector;
 use types::*;
 
 
-pub fn crossover_one_point<R: Rng>(pop: &mut Pop, words_per_ind: usize, bits_per_sym: usize, pc1: f64, rng: &mut R) {
+pub fn crossover_one_point<T, R>(pop: &mut Pop<T>, words_per_ind: usize, bits_per_sym: usize, pc1: f64, rng: &mut R) 
+    where R: Rng,
+          T: PrimInt + FromPrimitive {
     let pc1_sampler = Uniform::new(0.0, 1.0).unwrap();
     let cross_point_sampler = Uniform::new(0.0, (words_per_ind * bits_per_sym) as f64).unwrap();
 
@@ -25,7 +29,7 @@ pub fn crossover_one_point<R: Rng>(pop: &mut Pop, words_per_ind: usize, bits_per
     }
 }
 
-pub fn cross_at_point(pair: &mut [Ind<u8>], bits_per_sym: usize, cross_point: usize) {
+pub fn cross_at_point<T: PrimInt + FromPrimitive>(pair: &mut [Ind<T>], bits_per_sym: usize, cross_point: usize) {
     let cross_word_index = cross_point / bits_per_sym;
     for word_index in 0..cross_word_index {
         let tmp = pair[0].0[word_index];
@@ -35,7 +39,7 @@ pub fn cross_at_point(pair: &mut [Ind<u8>], bits_per_sym: usize, cross_point: us
     // cross the word that the cross point is within
     let l1 = pair[0].0[cross_word_index];
     let l2 = pair[1].0[cross_word_index];
-    let bit_mask = (2_u32.pow((cross_point % bits_per_sym) as u32) - 1) as u8;
+    let bit_mask = T::from_u32(2_u32.pow((cross_point % bits_per_sym) as u32) - 1).unwrap();
     pair[0].0[cross_word_index] = (l1 & bit_mask) | (l2 & !bit_mask);
     pair[1].0[cross_word_index] = (l2 & bit_mask) | (l1 & !bit_mask);
 }
@@ -51,7 +55,9 @@ fn test_cross_at_point() {
     assert!(pair[1] == Ind(vec!(0xF, 0xF, 0xC, 0x0, 0x0)));
 }
 
-pub fn crossover_two_point<R: Rng>(pop: &mut Pop, words_per_ind: usize, bits_per_sym: usize, pc2: f64, rng: &mut R) {
+pub fn crossover_two_point<T, R>(pop: &mut Pop<T>, words_per_ind: usize, bits_per_sym: usize, pc2: f64, rng: &mut R) 
+    where R: Rng,
+          T: PrimInt + FromPrimitive + ToPrimitive {
     let pc2_sampler = Uniform::new(0.0, 1.0).unwrap();
     let cross_point_sampler = Uniform::new(0.0, (words_per_ind * bits_per_sym) as f64).unwrap();
 
@@ -97,7 +103,8 @@ pub fn cross_at_points_im<T>(pair: (Vector<T>, Vector<T>), cross_points: &[usize
 
 // Generic multipoint crossover. This version skips indices that will not be effected,
 // making it somewhat more complex then necessary.
-pub fn cross_at_points(pair: &mut [Ind<u8>], bits_per_sym: usize, cross_points: &[usize]) {
+pub fn cross_at_points<T>(pair: &mut [Ind<T>], bits_per_sym: usize, cross_points: &[usize]) 
+    where T: PrimInt + FromPrimitive + ToPrimitive {
     let ind_len = pair[0].0.len();
 
     let mut bounded_cross_points = Vec::new();
@@ -170,8 +177,9 @@ fn test_cross_at_points() {
     assert!(pair[1] == Ind(vec!(0x0E, 0x0C, 0x00, 0x00, 0x00)));
 }
 
-pub fn cross_word(first: u8, second: u8, bit_index: u8) -> (u8, u8) {
-    let bit_mask = (2_u32.pow(bit_index as u32) - 1) as u8;
+pub fn cross_word<T>(first: T, second: T, bit_index: u8) -> (T, T) 
+    where T: PrimInt + FromPrimitive + ToPrimitive {
+    let bit_mask = T::from_u32((2_u32.pow(bit_index.to_u32().unwrap()) - 1)).unwrap();
 
     let first_result  = (first  & !bit_mask) | (second & bit_mask);
     let second_result = (second & !bit_mask) | (first  & bit_mask);

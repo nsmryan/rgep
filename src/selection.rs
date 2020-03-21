@@ -31,7 +31,7 @@ pub fn k_elite(fitnesses: &Vec<f64>, num_elite: usize) -> Vec<usize> {
     elite_indices
 }
 
-pub fn tournament_selection<R: Rng>(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec<f64>, prob: f64, tourn_size: usize, elitism: usize, rng: &mut R) {
+pub fn tournament_selection<R: Rng, T: Copy>(pop: &Pop<T>, new_pop: &mut Pop<T>, fitnesses: Vec<f64>, prob: f64, tourn_size: usize, elitism: usize, rng: &mut R) {
     let winner_rng = Uniform::new(0.0, 1.0).unwrap();
 
     let num_inds = pop.0.len();
@@ -49,7 +49,7 @@ pub fn tournament_selection<R: Rng>(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec
             let ind = &pop.0[index];
             let fitness = fitnesses[index];
             (ind, fitness)
-        }).collect::<Vec<(&Ind<u8>, f64)>>();
+        }).collect::<Vec<(&Ind<T>, f64)>>();
 
         tourny.sort_unstable_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
@@ -70,13 +70,16 @@ pub fn tournament_selection<R: Rng>(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec
     }
 }
 
-pub fn stochastic_universal_sampling<R: Rng>(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec<f64>, elitism: usize, rng: &mut R) {
+pub fn stochastic_universal_sampling<R, T>(pop: &Pop<T>, new_pop: &mut Pop<T>, fitnesses: Vec<f64>, elitism: usize, rng: &mut R) 
+    where T: Copy,
+          R: Rng {
     let offset_scaler = Uniform::new(0.0, 1.0).unwrap().sample(rng);
 
     select_stochastic_universal(pop, new_pop, fitnesses, elitism, offset_scaler);
 }
 
-pub fn select_stochastic_universal_naive(pop: &Pop, fitnesses: Vec<f64>, elitism: usize, offset_scaler: f64) -> Pop {
+pub fn select_stochastic_universal_naive<T>(pop: &Pop<T>, fitnesses: Vec<f64>, elitism: usize, offset_scaler: f64) -> Pop<T> 
+    where T: Clone {
     let num_inds = pop.0.len();
     let mut new_pop = Vec::with_capacity(num_inds);
 
@@ -123,7 +126,8 @@ pub fn select_stochastic_universal_naive(pop: &Pop, fitnesses: Vec<f64>, elitism
     Pop(new_pop)
 }
 
-pub fn select_stochastic_universal(pop: &Pop, new_pop: &mut Pop, fitnesses: Vec<f64>, elitism: usize, offset_scaler: f64) {
+pub fn select_stochastic_universal<T>(pop: &Pop<T>, new_pop: &mut Pop<T>, fitnesses: Vec<f64>, elitism: usize, offset_scaler: f64) 
+    where T: Copy {
     let total_fitness = fitnesses.iter().sum::<f64>();
     assert!(total_fitness != 0.0, "Cannot sample when all fitness values are 0.0!");
 

@@ -50,7 +50,7 @@ fn test_arity_simple_cases() {
 pub struct Sym<A, B> {
     pub name: String,
     pub arity: Arity,
-    pub fun: Rc<Fn(&mut Vec<A>, &mut B)>,
+    pub fun: Rc<dyn Fn(&mut Vec<A>, &mut B)>,
 }
 
 impl<A: Clone, B: Clone> Clone for Sym<A, B> {
@@ -63,7 +63,7 @@ impl<A: Clone, B: Clone> Clone for Sym<A, B> {
 }
 
 impl<A, B> Sym<A, B> {
-    pub fn new(name: String, arity: Arity, fun: Rc<Fn(&mut Vec<A>, &mut B)>) -> Sym<A, B> {
+    pub fn new(name: String, arity: Arity, fun: Rc<dyn Fn(&mut Vec<A>, &mut B)>) -> Sym<A, B> {
         Sym { name: name,
               arity: arity,
               fun: fun,

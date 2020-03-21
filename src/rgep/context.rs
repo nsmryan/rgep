@@ -1,5 +1,11 @@
 use std::cmp::max;
 
+#[cfg(test)]
+use float_cmp::ApproxEq;
+
+#[cfg(test)]
+use crate::ops::*;
+
 use crate::rgep::program::*;
 use crate::types::*;
 

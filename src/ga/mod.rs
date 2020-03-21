@@ -10,7 +10,7 @@ use crate::selection::*;
 use crate::evaluation::*;
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct GaParams {
     pub ind_size: usize,
     pub pop_size: usize,
@@ -34,6 +34,12 @@ impl Default for GaParams {
             prob_pc1: 0.6,
         }
     }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct GaState {
+    params: GaParams,
+    population: PopU8,
 }
 
 pub fn create_ga<R>(params: &GaParams, rng: &mut R) -> PopU8 

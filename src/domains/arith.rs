@@ -216,7 +216,7 @@ impl<A> Arith<A>
 }
 
 pub fn add_expr<A>() -> Sym<Arith<A>, Variables<A>> {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
@@ -226,7 +226,7 @@ pub fn add_expr<A>() -> Sym<Arith<A>, Variables<A>> {
 }
 
 pub fn sub_expr<A>() -> Sym<Arith<A>, Variables<A>> {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
@@ -236,7 +236,7 @@ pub fn sub_expr<A>() -> Sym<Arith<A>, Variables<A>> {
 }
 
 pub fn div_expr<A>() -> Sym<Arith<A>, Variables<A>> {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
@@ -246,7 +246,7 @@ pub fn div_expr<A>() -> Sym<Arith<A>, Variables<A>> {
 }
 
 pub fn mult_expr<A>() -> Sym<Arith<A>, Variables<A>> {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             let arg1 = stack.pop().unwrap();
             let arg2 = stack.pop().unwrap();
@@ -257,7 +257,7 @@ pub fn mult_expr<A>() -> Sym<Arith<A>, Variables<A>> {
 
 pub fn const_expr<A>(constant: A) -> Sym<Arith<A>, Variables<A>>
     where A: Num + Display + 'static + Copy {
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             stack.push(Arith::Const(constant));
     });
@@ -266,7 +266,7 @@ pub fn const_expr<A>(constant: A) -> Sym<Arith<A>, Variables<A>>
 
 pub fn var_expr<A>(name: String) -> Sym<Arith<A>, Variables<A>> {
     let sym_name = name.clone();
-    let f: Rc<Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
+    let f: Rc<dyn Fn(&mut Vec<Arith<A>>, &mut Variables<A>)> =
         Rc::new(move |stack: &mut Vec<Arith<A>>, _map: &mut Variables<A>| {
             stack.push(Arith::Var(name.clone()));
     });

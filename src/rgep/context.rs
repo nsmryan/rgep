@@ -1,10 +1,10 @@
 use std::cmp::max;
 
-#[cfg(test)]
-use float_cmp::ApproxEq;
+//#[cfg(test)]
+//use float_cmp::ApproxEq;
 
-#[cfg(test)]
-use crate::ops::*;
+//#[cfg(test)]
+//use crate::ops::*;
 
 use crate::rgep::program::*;
 use crate::types::*;
@@ -104,8 +104,9 @@ impl<A: Clone, B: Clone + 'static> Context<A, B> {
 
 #[test]
 fn test_eval_simple_equation() {
+    use domains::arith::{plus_sym, one_sym, zero_sym, two_sym};
+
     use float_cmp::ApproxEq;
-    use domains::arith::plus_sym;
 
     let terminals =
         vec!(zero_sym(), one_sym(), two_sym());

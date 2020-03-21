@@ -23,7 +23,7 @@ impl Default for InstrState {
 }
 
 pub fn store_a() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let arg = stack.pop().unwrap();
             state.reg_a = arg;
@@ -32,7 +32,7 @@ pub fn store_a() -> Sym<f64, InstrState> {
 }
 
 pub fn load_a() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             stack.push(state.reg_a);
     });
@@ -40,7 +40,7 @@ pub fn load_a() -> Sym<f64, InstrState> {
 }
 
 pub fn store_b() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let arg = stack.pop().unwrap();
             state.reg_b = arg;
@@ -49,7 +49,7 @@ pub fn store_b() -> Sym<f64, InstrState> {
 }
 
 pub fn load_b() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             stack.push(state.reg_b);
     });
@@ -57,7 +57,7 @@ pub fn load_b() -> Sym<f64, InstrState> {
 }
 
 pub fn printout() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             state.output.push(stack.pop().unwrap());
     });
@@ -65,7 +65,7 @@ pub fn printout() -> Sym<f64, InstrState> {
 }
 
 pub fn store_mem() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let addr = stack.pop().unwrap();
             let arg = stack.pop().unwrap();
@@ -77,7 +77,7 @@ pub fn store_mem() -> Sym<f64, InstrState> {
 }
 
 pub fn load_mem() -> Sym<f64, InstrState> {
-    let f: Rc<Fn(&mut Vec<f64>, &mut InstrState)> =
+    let f: Rc<dyn Fn(&mut Vec<f64>, &mut InstrState)> =
         Rc::new(move |stack: &mut Vec<f64>, state: &mut InstrState| {
             let addr = stack.pop().unwrap();
             if addr >= 0.0 && (addr as usize) < state.mem.len() {

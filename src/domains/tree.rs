@@ -4,10 +4,13 @@ use rgep::*;
 use rgep::program::*;
 
 
+/// Turn a symbol of any type into a symbol that builds a tree.
+/// This allows analysis of the resulting expression.
 pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>) -> Sym<Node<A, B>, B> {
     let name = sym.name.clone();
     let num_in = sym.arity.num_in;
-    let f: Rc<Fn(&mut Vec<Node<A, B>>, &mut B)> =
+
+    let f: Rc<dyn Fn(&mut Vec<Node<A, B>>, &mut B)> =
         Rc::new(move |stack: &mut Vec<Node<A, B>>, _state: &mut B| {
             let mut children = Vec::new();
             if num_in == 0 {
@@ -19,6 +22,7 @@ pub fn node<A: 'static + Clone, B: 'static + Clone>(sym: Sym<A, B>) -> Sym<Node<
                 stack.push(Node::Node(sym.clone(), children));
             }
         });
+
     Sym::new(name, Arity::new(num_in, 1), f)
 }
 

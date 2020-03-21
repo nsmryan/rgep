@@ -1,4 +1,7 @@
 use std::rc::Rc;
+use std::ops::{Sub, Add, Mul, Div};
+
+use num::FromPrimitive;
 
 use crate::rgep::*;
 use crate::rgep::program::*;
@@ -267,10 +270,6 @@ pub fn var_expr<A>(name: String) -> Sym<Arith<A>, Variables<A>> {
             stack.push(Arith::Var(name.clone()));
     });
     Sym { name: sym_name, arity: Arity::new(0, 1), fun: f }
-}
-
-pub fn push_context<A: Copy>(stack: &mut Vec<A>, b: &mut A) {
-    stack.push(*b);
 }
 
 pub fn dup<A: Clone, B>(stack: &mut Vec<A>, _b: &mut B) {

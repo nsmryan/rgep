@@ -179,7 +179,7 @@ fn test_cross_at_points() {
 
 pub fn cross_word<T>(first: T, second: T, bit_index: u8) -> (T, T) 
     where T: PrimInt + FromPrimitive + ToPrimitive {
-    let bit_mask = T::from_u32((2_u32.pow(bit_index.to_u32().unwrap()) - 1)).unwrap();
+    let bit_mask = T::from_u32(2_u32.pow(bit_index.to_u32().unwrap()) - 1).unwrap();
 
     let first_result  = (first  & !bit_mask) | (second & bit_mask);
     let second_result = (second & !bit_mask) | (first  & bit_mask);

@@ -5,13 +5,13 @@ use std::collections::HashMap;
 use std::iter;
 use std::iter::*;
 
-#[cfg(test)]
-use float_cmp::*;
+// #[cfg(test)]
+// use float_cmp::*;
 
 use rand::prelude::*;
 
-#[cfg(test)]
-use crate::ops::*;
+//#[cfg(test)]
+//use crate::ops::*;
 
 use crate::types::*;
 use crate::crossover::*;
@@ -200,6 +200,8 @@ pub fn rgep<R, A, B>(params: &RgepParams,
 
 #[test]
 fn test_point_mutation_flips_bits() {
+    use domains::arith::{plus_sym, one_sym, zero_sym, two_sym};
+
     let terminals: Vec<Sym<f64, ()>> =
         vec!(zero_sym(), one_sym(), two_sym());
 

@@ -1,3 +1,6 @@
+use std::rc::Rc;
+use std::ops::DerefMut;
+
 use rand::prelude::*;
 use rand::distributions::Distribution;
 
@@ -10,8 +13,9 @@ use im::vector::Vector;
 use types::*;
 
 
-pub fn crossover_one_point<T, R>(pop: &mut Pop<T>, words_per_ind: usize, bits_per_sym: usize, pc1: f64, rng: &mut R) 
+pub fn crossover_one_point<T, P, R>(pop: P, words_per_ind: usize, bits_per_sym: usize, pc1: f64, rng: &mut R) 
     where R: Rng,
+          P: DerefMut<Target=Pop<T>>,
           T: PrimInt + FromPrimitive {
     let pc1_sampler = Uniform::new(0.0, 1.0).unwrap();
     let cross_point_sampler = Uniform::new(0.0, (words_per_ind * bits_per_sym) as f64).unwrap();
@@ -55,8 +59,9 @@ fn test_cross_at_point() {
     assert!(pair[1] == Ind(vec!(0xF, 0xF, 0xC, 0x0, 0x0)));
 }
 
-pub fn crossover_two_point<T, R>(pop: &mut Pop<T>, words_per_ind: usize, bits_per_sym: usize, pc2: f64, rng: &mut R) 
+pub fn crossover_two_point<T, R, P>(pop: P, words_per_ind: usize, bits_per_sym: usize, pc2: f64, rng: &mut R) 
     where R: Rng,
+          P: DerefMut<Target=Pop<T>>,
           T: PrimInt + FromPrimitive + ToPrimitive {
     let pc2_sampler = Uniform::new(0.0, 1.0).unwrap();
     let cross_point_sampler = Uniform::new(0.0, (words_per_ind * bits_per_sym) as f64).unwrap();

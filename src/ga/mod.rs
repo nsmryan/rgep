@@ -1,12 +1,11 @@
 use std::rc::Rc;
 use std::iter;
 use std::iter::*;
+use std::cell::{RefCell, RefMut};
 
 use rand::prelude::*;
 
 use num::PrimInt;
-
-use myopic::lens::*;
 
 use crate::types::*;
 use crate::crossover::*;
@@ -15,19 +14,21 @@ use crate::selection::*;
 use crate::evaluation::*;
 
 
-type Stage<State, R> = Rc<dyn Fn(&mut State, &mut R)>;
+type Stage<State, R> = Rc<dyn Fn(State, &mut R)>;
 type StageTransformer<State, R> = Rc<dyn Fn(Stage<State, R>) -> Stage<State, R>>;
 
 pub fn compose_stages<S, R>(stage1: Stage<S, R>, stage2: Stage<S, R>) -> Stage<S, R> 
     where S: 'static ,
           R: 'static {
-    let f: Rc<dyn Fn(&mut S, &mut R)> = Rc::new(move |state, rng| {
+    let f: Rc<dyn Fn(S, &mut R)> = Rc::new(|state, rng| {
         stage1(state, rng);
         stage2(state, rng);
     });
 
     return f;
 }
+
+type Getter<S, D> = Rc<dyn Fn(S) -> D>;
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct GaParams {
@@ -58,7 +59,7 @@ impl Default for GaParams {
 #[derive(Clone, PartialEq)]
 pub struct GaState {
     params: GaParams,
-    population: PopU8,
+    population: RefCell<PopU8>,
 }
 
 impl GaState {
@@ -74,7 +75,7 @@ impl GaState {
         }
 
         let population = Pop(pop);
-        return GaState { population,
+        return GaState { population: RefCell::new(population),
                          params: *params,
         };
     }
@@ -83,24 +84,24 @@ impl GaState {
         let ind = Ind(std::iter::repeat(0x0).take(params.ind_size).collect());
         let population = Pop(iter::repeat(ind).take(params.pop_size).collect());
 
-        return GaState { population,
+        return GaState { population: RefCell::new(population),
                          params: *params,
         };
     }
 }
 
 pub struct PmState<'a> {
-    population: &'a mut PopU8,
+    population: RefMut<'a, PopU8>,
     pm: f64,
     bits_used: usize,
 }
-pub fn point_mutation_stage<'a, S, R, T, L>(lens: L) -> Stage<S, R>
+
+pub fn point_mutation_stage<'a, S, R, T, L>(getter: Getter<S, PmState<'a>>) -> Stage<S, R>
     where R: Rng,
-          T: PrimInt,
-          S: 'a, 
-          L: Getter<Input=S, Output=PmState<'a>> + 'static {
-    let f: Rc<dyn Fn(&mut S, &mut R)> = Rc::new(move |state, rng| {
-        let pm_state = lens.get(state);
+          T: PrimInt, 
+          S: 'a {
+    let f: Rc<dyn Fn(S, &mut R)> = Rc::new(move |state, rng| {
+        let mut pm_state = getter(state);
         point_mutation(pm_state.population,
                        pm_state.bits_used,
                        pm_state.pm,
@@ -113,16 +114,25 @@ pub fn point_mutation_stage<'a, S, R, T, L>(lens: L) -> Stage<S, R>
 pub fn ga<R: Rng>(params: &GaParams,
                   eval: &dyn Fn(&Ind<u8>, &mut R) -> f64,
                   rng: &mut R) -> PopU8 {
+    //let pm_lens: Rc<Fn(GaState) -> PmState<'a>> = Rc::new(|ga_state| {
+    let pm_lens = Rc::new(|ga_state| {
+        PmState {
+            population: ga_state.population,
+            pm: ga_state.params.prob_pm,
+            bits_used: 8,
+        }
+    });
+
     let mut state = GaState::create_ga(&params, rng);
     let mut alt_state = GaState::create_ga_fast(&params);
 
     for _ in 0..params.num_gens {
-        point_mutation(&mut state.population, 8, params.prob_pm, rng);
-        crossover_one_point(&mut state.population, params.ind_size, 8, params.prob_pc1, rng);
-        let fitnesses = evaluate(&state.population, eval.clone(), rng);
-        stochastic_universal_sampling(&state.population, &mut alt_state.population, fitnesses, params.elitism, rng);
+        point_mutation(state.population.borrow_mut(), 8, params.prob_pm, rng);
+        crossover_one_point(state.population.borrow_mut(), params.ind_size, 8, params.prob_pc1, rng);
+        //let fitnesses = evaluate(&state.population, eval.clone(), rng);
+        //stochastic_universal_sampling(&state.population, &mut alt_state.population, fitnesses, params.elitism, rng);
     }
 
-    state.population
+    return state.population.into_inner();
 }
 

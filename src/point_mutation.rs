@@ -1,4 +1,6 @@
+use std::rc::Rc;
 use std::iter::IntoIterator;
+use std::ops::DerefMut;
 
 use rand::prelude::*;
 
@@ -32,7 +34,10 @@ pub fn point_mutate_naive<'a, I, T, R: Rng>(ind: I, bits_used: usize, pm: f64, r
     }
 }
 
-pub fn point_mutation<T: PrimInt, R: Rng>(pop: &mut Pop<T>, bits_used: usize, pm: f64, rng: &mut R) {
+pub fn point_mutation<T, R, P>(pop: P, bits_used: usize, pm: f64, rng: &mut R)
+    where T: PrimInt,
+          R: Rng,
+          P: DerefMut<Target=Pop<T>> {
     for ind in pop.0.iter_mut() {
         point_mutate(ind, bits_used, pm, rng);
     }

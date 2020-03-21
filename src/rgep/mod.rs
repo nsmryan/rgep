@@ -1,5 +1,6 @@
 pub mod context;
 
+use std::rc::Rc;
 use std::iter;
 use std::iter::*;
 
@@ -101,25 +102,25 @@ pub fn rgep<R, A, B>(params: &RgepParams,
                      context: &Context<A, B>,
                      state: &B,
                      eval_ind: &EvalFunction<A, B, R>,
-                     rng: &mut R) -> PopU8 
+                     rng: &mut R) -> PopU8
     where R: Rng, A: Clone, B: Clone {
-    let mut pop = Box::new(create_rgep(&params, &context, rng));
-    let mut alt_pop = Box::new(create_rgep_fast(&params));
+    let mut pop = create_rgep(&params, &context, rng);
+    let mut alt_pop = create_rgep_fast(&params);
 
     let bits_per_sym = context.bits_per_sym();
 
     for _ in 0..params.num_gens {
-        rotation(&mut pop, params.prob_rotation, rng);
-        point_mutation(&mut pop, bits_per_sym, params.prob_mut, rng);
-        crossover_one_point(&mut pop, params.ind_size, bits_per_sym, params.prob_one_point_crossover, rng);
-        crossover_two_point(&mut pop, params.ind_size, bits_per_sym, params.prob_two_point_crossover, rng);
-        let fitnesses = rgep_evaluate(&pop, context, state, eval_ind, rng);
-        stochastic_universal_sampling(&pop, &mut alt_pop, fitnesses, params.elitism, rng);
+        //rotation(&mut pop, params.prob_rotation, rng);
+        //point_mutation(&mut pop, bits_per_sym, params.prob_mut, rng);
+        //crossover_one_point(&mut pop, params.ind_size, bits_per_sym, params.prob_one_point_crossover, rng);
+        //crossover_two_point(&mut pop, params.ind_size, bits_per_sym, params.prob_two_point_crossover, rng);
+        //let fitnesses = rgep_evaluate(&pop, context, state, eval_ind, rng);
+        //stochastic_universal_sampling(&pop, &mut alt_pop, fitnesses, params.elitism, rng);
 
-        std::mem::swap(&mut pop, &mut alt_pop);
+        //std::mem::swap(&mut pop, &mut alt_pop);
     }
 
-    *pop
+    pop
 }
 
 #[test]

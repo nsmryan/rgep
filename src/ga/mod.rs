@@ -98,14 +98,13 @@ pub fn point_mutation_stage<'a, S, R, T, L>(lens: L) -> Stage<S, R>
     where R: Rng + 'static,
           T: PrimInt + 'static,
           S: 'a, 
-          L: Optical<Input=S, Output=PmState<'a>> + 'static {
+          L: Getter<Input=S, Output=PmState<'a>> + 'static {
     let f: Rc<dyn Fn(&mut S, &mut R)> = Rc::new(move |state, rng| {
         let pm_state = lens.get(state);
         point_mutation(pm_state.population,
                        pm_state.bits_used,
                        pm_state.pm,
                        rng);
-        lens.set(state, pm_state);
     });
 
     return f;

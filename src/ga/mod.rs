@@ -95,8 +95,8 @@ pub struct PmState<'a> {
     bits_used: usize,
 }
 pub fn point_mutation_stage<'a, S, R, T, L>(lens: L) -> Stage<S, R>
-    where R: Rng + 'static,
-          T: PrimInt + 'static,
+    where R: Rng,
+          T: PrimInt,
           S: 'a, 
           L: Getter<Input=S, Output=PmState<'a>> + 'static {
     let f: Rc<dyn Fn(&mut S, &mut R)> = Rc::new(move |state, rng| {

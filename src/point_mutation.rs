@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::cell::RefCell;
 use std::iter::IntoIterator;
 use std::ops::DerefMut;
 
@@ -11,7 +12,36 @@ use statrs::distribution::{Uniform, Geometric};
 use im::vector::Vector;
 
 use types::*;
+use stage::*;
 
+
+pub struct PmState {
+    pub population: Rc<RefCell<PopU8>>,
+    pub pm: f64,
+    pub bits_used: usize,
+}
+
+impl PmState {
+    pub fn new(population: Rc<RefCell<PopU8>>,
+               pm: f64,
+               bits_used: usize) -> PmState {
+        return PmState { population, pm, bits_used };
+    }
+}
+
+pub fn point_mutation_stage<S, R>(getter: Getter<S, PmState>) -> Stage<S, R>
+    where R: Rng,
+          S: 'static {
+    let f: Rc<dyn Fn(&S, &mut R)> = Rc::new(move |state, rng| {
+        let mut pm_state = getter(state);
+        point_mutation(&mut pm_state.population.borrow_mut(),
+                       pm_state.bits_used,
+                       pm_state.pm,
+                       rng);
+    });
+
+    return f;
+}
 
 pub fn point_mutation_naive<T: PrimInt, R: Rng>(pop: &mut Pop<T>, bits_used: usize, pm: f64, rng: &mut R) {
     for ind in pop.0.iter_mut() {
@@ -34,10 +64,10 @@ pub fn point_mutate_naive<'a, I, T, R: Rng>(ind: I, bits_used: usize, pm: f64, r
     }
 }
 
-pub fn point_mutation<T, R, P>(pop: P, bits_used: usize, pm: f64, rng: &mut R)
+pub fn point_mutation<T, R>(pop: &mut Pop<T>, bits_used: usize, pm: f64, rng: &mut R)
     where T: PrimInt,
-          R: Rng,
-          P: DerefMut<Target=Pop<T>> {
+          R: Rng, {
+          // P: DerefMut<Target=Pop<T>> {
     for ind in pop.0.iter_mut() {
         point_mutate(ind, bits_used, pm, rng);
     }

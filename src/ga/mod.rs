@@ -42,64 +42,79 @@ impl Default for GaParams {
     }
 }
 
-#[derive(Clone, PartialEq)]
-pub struct GaState {
+#[derive(Clone)]
+pub struct GaState<R> {
     params: GaParams,
-    population: Rc<RefCell<Pop<u8>>>,
-    eval: Eval<Ind<u8>, R>,
+    population: Rc<RefCell<PopU8>>,
+    alt_population: Rc<RefCell<PopU8>>,
+    eval: Eval<IndU8, R>,
+    fitnesses: Rc<RefCell<Vec<f64>>>,
 }
 
-impl GaState {
-    pub fn create_ga<R>(params: &GaParams, rng: &mut R) -> GaState 
-    where R: Rng {
-        let mut pop = Vec::with_capacity(params.pop_size);
-        for _ in 0..params.pop_size {
-            let mut ind_vec = Vec::with_capacity(params.ind_size);
-            for _ in 0..params.ind_size {
-                ind_vec.push(rng.gen_range(0, 0xFF) as u8);
-            }
-            pop.push(Ind(ind_vec));
+pub fn populationU8<R: Rng>(pop_size: usize, ind_size: usize, rng: &mut R) -> PopU8 {
+    let mut pop = Vec::with_capacity(pop_size);
+    for _ in 0..pop_size {
+        let mut ind_vec = Vec::with_capacity(ind_size);
+        for _ in 0..ind_size {
+            ind_vec.push(rng.gen_range(0, 0xFF) as u8);
         }
-
-        let population = Pop(pop);
-        return GaState { population: Rc::new(RefCell::new(population)),
-                         params: *params,
-        };
+        pop.push(Ind(ind_vec));
     }
 
-    pub fn create_ga_fast(params: &GaParams) -> GaState {
-        let ind = Ind(std::iter::repeat(0x0).take(params.ind_size).collect());
-        let population = Pop(iter::repeat(ind).take(params.pop_size).collect());
+    let population = Pop(pop);
+
+    return population;
+}
+
+pub fn populationU8Zeros(pop_size: usize, ind_size: usize) -> PopU8 {
+    let ind = Ind(std::iter::repeat(0x0).take(ind_size).collect());
+    let population = Pop(iter::repeat(ind).take(pop_size).collect());
+
+    return population;
+}
+
+impl<R: Rng> GaState<R> {
+    pub fn create_ga(params: &GaParams, eval: Eval<IndU8, R>, rng: &mut R) -> GaState<R> {
+        let population = populationU8(params.pop_size, params.ind_size, rng);
+        let alt_population = populationU8Zeros(params.pop_size, params.ind_size);
+        let fitnesses = vec![0.0; params.pop_size];
 
         return GaState { population: Rc::new(RefCell::new(population)),
+                         alt_population: Rc::new(RefCell::new(alt_population)),
+                         eval,
                          params: *params,
+                         fitnesses: Rc::new(RefCell::new(fitnesses)),
         };
     }
 }
 
-pub fn ga<R: Rng>(params: &GaParams,
-                  eval: &dyn Fn(&Ind<u8>, &mut R) -> f64,
-                  rng: &mut R) -> Rc<RefCell<PopU8>> {
-    let state = GaState::create_ga(&params, rng);
-    let alt_state = GaState::create_ga_fast(&params);
+pub fn ga<R>(params: &GaParams,
+                  eval: Eval<IndU8, R>,
+                  rng: &mut R) -> Rc<RefCell<PopU8>> 
+    where R: Rng + 'static {
+    let state = GaState::create_ga(&params, eval, rng);
 
-    let pm_stage: Stage<GaState, R> = point_mutation_stage(Rc::new(|state: &GaState| {
+    let pm_stage: Stage<GaState<R>, R> = point_mutation_stage(Rc::new(|state: &GaState<R>| {
         return PmState::new(state.population.clone(), state.params.prob_pm, 8);
     }));
 
-    let cross_stage: Stage<GaState, R> = crossover_stage(Rc::new(|state: &GaState| {
+    let cross_stage: Stage<GaState<R>, R> = crossover_stage(Rc::new(|state: &GaState<R>| {
         return CrossoverState::new(state.population.clone(), state.params.prob_pc1);
     }));
 
-    let eval_stage: Stage<GaState, R> = eval_stage(Rc::new(|state: &GaState| {
-        return EvalState::new(state.population.clone(), state.eval);
+    let eval_stage: Stage<GaState<R>, R> = evaluate_stage(Rc::new(|state: &GaState<R>| {
+        return EvalState::new(state.population.clone(), state.eval.clone(), state.fitnesses.clone());
+    }));
+
+    let sus_stage : Stage<GaState<R>, R> = sus_stage(Rc::new(|state: &GaState<R>| {
+        return SusState::new(state.population.clone(), state.alt_population.clone(), state.fitnesses.clone(), state.params.elitism);
     }));
 
     for _ in 0..params.num_gens {
         pm_stage(&state, rng);
         cross_stage(&state, rng);
-        //let fitnesses = evaluate(&state.population, eval.clone(), rng);
-        //stochastic_universal_sampling(&state.population, &mut alt_state.population, fitnesses, params.elitism, rng);
+        eval_stage(&state, rng);
+        sus_stage(&state, rng);
     }
 
     return state.population;

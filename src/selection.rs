@@ -6,6 +6,7 @@ use std::iter;
 use num::traits::Pow;
 
 use rand::prelude::*;
+use rand::distributions::Distribution;
 
 use statrs::distribution::Uniform;
 

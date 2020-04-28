@@ -32,8 +32,9 @@ pub fn crossover_stage<S, R>(getter: Getter<S, CrossoverState>) -> Stage<S, R>
           S: 'static {
     let f: Rc<dyn Fn(&S, &mut R)> = Rc::new(move |state, rng| {
         let mut cross_state = getter(state);
+        let pop_len = cross_state.population.borrow().0.len();
         crossover_one_point(&mut cross_state.population.borrow_mut(),
-                            cross_state.population.borrow().0.len(),
+                            pop_len,
                             8,
                             cross_state.pc1,
                             rng);

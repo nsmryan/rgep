@@ -60,8 +60,6 @@ pub fn evaluate<R>(pop: &PopU8,
                    fitnesses: &mut Vec<f64>,
                    rng: &mut R)
     where R: Rng {
-    let mut fitnesses = Vec::new();
-
     for (index, ind) in pop.0.iter().enumerate() {
         fitnesses[index] = eval(ind, rng);
     }

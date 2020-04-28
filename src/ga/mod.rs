@@ -89,8 +89,8 @@ impl<R: Rng> GaState<R> {
 }
 
 pub fn ga<R>(params: &GaParams,
-                  eval: Eval<IndU8, R>,
-                  rng: &mut R) -> Rc<RefCell<PopU8>> 
+             eval: Eval<IndU8, R>,
+             rng: &mut R) -> Rc<RefCell<PopU8>> 
     where R: Rng + 'static {
     let state = GaState::create_ga(&params, eval, rng);
 

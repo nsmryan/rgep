@@ -12,8 +12,8 @@ opt-level = 3
 debug = false
 
 [dependencies]
-statrs = "0.10"
-rand = "0.5.5"
+statrs = "0.12"
+rand = { version = "0.7.3", features = ["small_rng"] }
 float-cmp = "0.4"
 rayon = "1.0"
 im = "12.3"

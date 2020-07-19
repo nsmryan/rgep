@@ -1,4 +1,5 @@
 extern crate rgep;
+extern crate myopic;
 extern crate rand;
 extern crate statrs;
 #[cfg(test)] extern crate float_cmp;

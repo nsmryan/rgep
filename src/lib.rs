@@ -2,6 +2,7 @@ extern crate rand;
 extern crate statrs;
 extern crate im;
 extern crate num;
+extern crate myopic;
 #[cfg(test)] extern crate float_cmp;
 
 
@@ -35,4 +36,6 @@ pub use ga::*;
 pub mod rgep;
 pub use rgep::*;
 
+pub mod stage;
+pub use stage::*;
 

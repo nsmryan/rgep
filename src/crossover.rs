@@ -1,3 +1,7 @@
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::ops::DerefMut;
+
 use rand::prelude::*;
 use rand::distributions::Distribution;
 
@@ -8,7 +12,36 @@ use statrs::distribution::Uniform;
 use im::vector::Vector;
 
 use types::*;
+use stage::*;
 
+
+pub struct CrossoverState {
+    pub population: Rc<RefCell<PopU8>>,
+    pub pc1: f64,
+}
+
+impl CrossoverState {
+    pub fn new(population: Rc<RefCell<PopU8>>,
+               pc1: f64) -> CrossoverState {
+        return CrossoverState { population, pc1 };
+    }
+}
+
+pub fn crossover_stage<S, R>(getter: Getter<S, CrossoverState>) -> Stage<S, R>
+    where R: Rng,
+          S: 'static {
+    let f: Rc<dyn Fn(&S, &mut R)> = Rc::new(move |state, rng| {
+        let mut cross_state = getter(state);
+        let pop_len = cross_state.population.borrow().0.len();
+        crossover_one_point(&mut cross_state.population.borrow_mut(),
+                            pop_len,
+                            8,
+                            cross_state.pc1,
+                            rng);
+    });
+
+    return f;
+}
 
 pub fn crossover_one_point<T, R>(pop: &mut Pop<T>, words_per_ind: usize, bits_per_sym: usize, pc1: f64, rng: &mut R) 
     where R: Rng,
@@ -55,7 +88,7 @@ fn test_cross_at_point() {
     assert!(pair[1] == Ind(vec!(0xF, 0xF, 0xC, 0x0, 0x0)));
 }
 
-pub fn crossover_two_point<T, R>(pop: &mut Pop<T>, words_per_ind: usize, bits_per_sym: usize, pc2: f64, rng: &mut R) 
+pub fn crossover_two_point<T, R>(pop: &mut Box<Pop<T>>, words_per_ind: usize, bits_per_sym: usize, pc2: f64, rng: &mut R) 
     where R: Rng,
           T: PrimInt + FromPrimitive + ToPrimitive {
     let pc2_sampler = Uniform::new(0.0, 1.0).unwrap();
